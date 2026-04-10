@@ -1,0 +1,136 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: siem_postgres
+    environment:
+      POSTGRES_USER: siem
+      POSTGRES_PASSWORD: siem123
+      POSTGRES_DB: monitoreo_seguridad
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d
+    networks:
+      - siem-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+    container_name: siem_elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    networks:
+      - siem-net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.15.0
+    container_name: siem_logstash
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5044:5044"
+    volumes:
+      - ./logstash/syslog-remotos.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./data/remotos:/var/log/remotos
+    networks:
+      - siem-net
+
+  syslog-ng:
+    image: balabit/syslog-ng:latest
+    container_name: siem_syslog
+    depends_on:
+      - logstash
+    ports:
+      - "514:514/udp"
+    volumes:
+      - ./syslog-ng/syslog-ng.conf:/etc/syslog-ng/syslog-ng.conf:ro
+      - ./data/remotos:/var/log/remotos
+    networks:
+      - siem-net
+
+  cliente1:
+    image: alpine:latest
+    container_name: siem_cliente1
+    command: sh -c "apk add --no-cache busybox-extras && tail -f /dev/null"
+    depends_on:
+      - syslog-ng
+    hostname: cliente1
+    networks:
+      - siem-net
+  
+  cliente2:
+    image: alpine:latest
+    container_name: siem_cliente2
+    command: sh -c "apk add --no-cache busybox-extras iputils && tail -f /dev/null"
+    depends_on:
+      - syslog-ng
+    hostname: cliente2
+    networks:
+      - siem-net
+  
+  cliente3:
+    image: alpine:latest
+    container_name: siem_cliente3
+    command: sh -c "apk add --no-cache busybox-extras iputils && tail -f /dev/null"
+    depends_on:
+      - syslog-ng
+    hostname: cliente3
+    networks:
+      - siem-net
+
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: siem_n8n
+    depends_on:
+      - postgres
+    ports:
+      - "5678:5678"
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: monitoreo_seguridad
+      DB_POSTGRESDB_USER: siem
+      DB_POSTGRESDB_PASSWORD: siem123
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: admin
+      N8N_BASIC_AUTH_PASSWORD: admin123
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_RESTRICT_FILE_ACCESS_TO: /var/log/remotos;/home/node/.n8n-files
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./data/remotos:/var/log/remotos
+    networks:
+      - siem-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: siem_grafana
+    depends_on:
+      - postgres
+      - elasticsearch
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - siem-net
+
+networks:
+  siem-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  elastic_data:
+  n8n_data:
+  grafana_data:
