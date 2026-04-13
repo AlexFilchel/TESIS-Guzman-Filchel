@@ -18,7 +18,17 @@ export default function Login() {
       localStorage.setItem('token', data.access_token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.detail || 'Usuario o contraseña incorrectos');
+      const errorData = err.response?.data?.detail;
+      // Manejar diferentes formatos de error
+      if (typeof errorData === 'string') {
+        setError(errorData);
+      } else if (Array.isArray(errorData)) {
+        setError(errorData.map(e => e.msg || JSON.stringify(e)).join(', '));
+      } else if (typeof errorData === 'object') {
+        setError(errorData.msg || JSON.stringify(errorData));
+      } else {
+        setError('Usuario o contraseña incorrectos');
+      }
     } finally {
       setLoading(false);
     }

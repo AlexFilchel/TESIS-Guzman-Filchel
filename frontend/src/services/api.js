@@ -3,8 +3,7 @@ import axios from 'axios';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 const api = axios.create({
-  baseURL: API_URL,
-  headers: { 'Content-Type': 'application/json' }
+  baseURL: API_URL
 });
 
 api.interceptors.request.use((config) => {
@@ -24,9 +23,15 @@ api.interceptors.response.use(
   }
 );
 
-// Auth
-export const login = (username, password) => 
-  api.post('/api/auth/login', new URLSearchParams({ username, password }));
+// Auth - usa form data para OAuth2PasswordRequestForm
+export const login = (username, password) => {
+  const formData = new URLSearchParams();
+  formData.append('username', username);
+  formData.append('password', password);
+  return api.post('/api/auth/login', formData, {
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+  });
+};
 
 export const register = (data) => 
   api.post('/api/auth/register', data);
