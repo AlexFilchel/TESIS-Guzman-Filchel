@@ -1,4 +1,12 @@
-## 5.1 Caso 1: RENAPER (Argentina, 2021)
+# 5. Casos de Estudio - Implementación Frontend
+
+> **Nota:** Los casos reales implementados en el frontend del sistema SIEM se encuentran en:
+> - `frontend/src/pages/Casos.jsx` - Interfaz visual con simulador
+> - `backend/app/routers/simulator.py` - Tipos de simulación para pruebas
+
+---
+
+## 5.1 Caso A: RENAPER (Argentina, 2021)
 
 ### 5.1.1 Descripción técnica del ataque
 

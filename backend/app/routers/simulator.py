@@ -65,6 +65,23 @@ LOG_TEMPLATES = {
         "umbral": 1,
         "template": "CRITICAL: Service {service} unresponsive",
         "host": "server1"
+    },
+    # =============================================================================
+    # CASOS REALES - Tipos de simulación para la tesis
+    # =============================================================================
+    "high_volume_query": {
+        "categoria": "consulta_masiva",
+        "severidad": "critical",
+        "umbral": 10,
+        "template": "Query SID: DNI={dni}, Sexo={sexo}, User={user}",
+        "host": "sid-server"
+    },
+    "web_exploit": {
+        "categoria": "exploit_web",
+        "severidad": "critical",
+        "umbral": 1,
+        "template": "X-Handler: ${{${{runtime.exec(\"{cmd}\")}}}}",
+        "host": "web01"
     }
 }
 
@@ -102,6 +119,15 @@ def generate_log(tipo: str, ip: str = None, username: str = None, cantidad: int 
             msg = template_data["template"].format(percent=random.choice(PERCENTS))
         elif tipo == "critical_event":
             msg = template_data["template"].format(service=random.choice(SERVICES))
+        elif tipo == "high_volume_query":
+            # Simula consultas masivas al SID (caso RENAPER)
+            dni = f"{random.randint(10000000, 50000000)}"
+            sexo = random.choice(["M", "F"])
+            msg = template_data["template"].format(dni=dni, sexo=sexo, user="usr_salud_001")
+        elif tipo == "web_exploit":
+            # Simula explotación web (caso Equifax)
+            cmd = random.choice(["whoami", "id", "cat /etc/passwd", "ls -la"])
+            msg = template_data["template"].format(cmd=cmd)
         else:
             msg = template_data["template"]
         
@@ -160,5 +186,8 @@ async def get_tipos():
         {"tipo": "directory_scan", "nombre": "Directory Scan", "severidad": "medium", "descripcion": "Acceso a rutas sensibles"},
         {"tipo": "info", "nombre": "Generic Info", "severidad": "low", "descripcion": "Log informativo"},
         {"tipo": "warning", "nombre": "Generic Warning", "severidad": "medium", "descripcion": "Advertencia del sistema"},
-        {"tipo": "critical_event", "nombre": "Critical Event", "severidad": "critical", "descripcion": "Evento crítico del sistema"}
+        {"tipo": "critical_event", "nombre": "Critical Event", "severidad": "critical", "descripcion": "Evento crítico del sistema"},
+        # Casos Reales - Tesis
+        {"tipo": "high_volume_query", "nombre": "Caso RENAPER - Consulta Masiva", "severidad": "critical", "descripcion": "Múltiples consultas a sistema SID"},
+        {"tipo": "web_exploit", "nombre": "Caso Equifax - Exploit Web", "severidad": "critical", "descripcion": "Patrón de explotación web CVE-2017-5638"}
     ]
