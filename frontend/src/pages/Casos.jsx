@@ -67,7 +67,7 @@ const CASOS_REALES = [
     impacto: '147 millones de registros filtrados: números de tarjeta de crédito (209k), licencias de conducir, SSN, fechas de nacimiento, direcciones',
     timeline: [
       { paso: 1, tiempo: 'Mayo 2017', descripcion: 'Explotación de CVE-2017-5638 en aplicación web' },
-      { paso: 2, tiempo: 'Mayo 2017', descripcion: 'Ejecución remota de código en servidorcomprometido' },
+      { paso: 2, tiempo: 'Mayo 2017', descripcion: 'Ejecución remota de código en servidor comprometido' },
       { paso: 3, tiempo: 'Junio 2017', descripcion: 'Movimiento lateral a otros sistemas internos' },
       { paso: 4, tiempo: 'Junio 2017', descripcion: 'Acceso a bases de datos con información financiera' },
       { paso: 5, tiempo: 'Julio 2017', descripcion: 'Exfiltración sostenida de datos' },
@@ -106,9 +106,10 @@ const CASOS_REALES = [
 // =============================================================================
 export default function Casos() {
   const [casoSeleccionado, setCasoSeleccionado] = useState(null);
-  const [vista, setVista] = useState('seleccion');
+  const [vista, setVista] = useState('seleccion'); // 'seleccion' | 'detalle' | 'simulacion'
   const [logsInyectados, setLogsInyectados] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resultado, setResultado] = useState(null);
   
   // Para la visualización de logs
   const [mostrarAnalizados, setMostrarAnalizados] = useState(false);
@@ -123,6 +124,7 @@ export default function Casos() {
     if (!casoSeleccionado) return;
     
     setLoading(true);
+    setResultado(null);
     
     try {
       // Simular según el tipo de caso
@@ -147,10 +149,17 @@ export default function Casos() {
       });
       
       setLogsInyectados(true);
-      // No necesitamos mensaje separado - los logs se muestran directamente
+      setResultado({
+        success: true,
+        message: `✅ Logs del caso "${casoSeleccionado.titulo}" inyectados al sistema`,
+        alerta: data.alerta
+      });
       
     } catch (error) {
-      console.error('Error en simulación:', error);
+      setResultado({
+        success: false,
+        message: 'Error al simular: ' + error.message
+      });
     } finally {
       setLoading(false);
     }
@@ -231,6 +240,7 @@ export default function Casos() {
               setVista('seleccion');
               setCasoSeleccionado(null);
               setLogsInyectados(false);
+              setResultado(null);
             }}
             className="text-blue-400 hover:text-blue-300 font-medium"
           >
@@ -344,8 +354,8 @@ export default function Casos() {
               </p>
             </div>
             {logsInyectados && (
-              <span className="px-3 py-1 bg-orange-600 text-white rounded-full text-sm font-bold animate-pulse">
-                🔴 Simulación Activa
+              <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold">
+                ✅ Logs Inyectados
               </span>
             )}
           </div>
@@ -364,53 +374,14 @@ export default function Casos() {
                 : 'bg-blue-600 hover:bg-blue-500 hover:scale-[1.01] shadow-lg shadow-blue-500/30'
             }`}
           >
-{loading ? '⏳ Ejecutando...' : '🎯 Ejecutar Simulación de Logs'}
+            {loading ? '⏳ Ejecutando...' : '🎯 Ejecutar Simulación de Logs'}
           </button>
           
-          {/* Logs Educativos + Alerta Disparada */}
-          {logsInyectados && (
-            <div className="space-y-6">
-              {/* Panel de Logs */}
-              <div className="bg-gray-800 rounded-xl p-6 border-2 border-orange-500">
-                <h3 className="text-xl font-bold mb-4">📄 Logs del Caso</h3>
-                <p className="text-gray-400 text-sm mb-4">
-                  Eventos registrados durante el incidente:
-                </p>
-                <div className="bg-gray-900 rounded-lg p-4 max-h-48 overflow-y-auto">
-                  {casoSeleccionado.logs_raw.map((log, idx) => (
-                    <div key={idx} className="p-2 border-b border-gray-800 last:border-0">
-                      <span className="text-orange-400 font-mono text-xs">{log}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Alerta Disparada - Visualización del efecto */}
-              <div className="bg-red-900/20 rounded-xl p-6 border-2 border-red-500 animate-pulse">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl">⚡</span>
-                  <div>
-                    <h3 className="text-xl font-bold text-red-400">INCIDENTE DETECTADO</h3>
-                    <p className="text-gray-400 text-sm">Regla de correlación activada</p>
-                  </div>
-                </div>
-                <div className="bg-red-900/50 rounded-lg p-4 border border-red-600">
-                  <p className="text-red-300 font-semibold">
-                    🔴 Alerta: "{casoSeleccionado.regla_deteccion}"
-                  </p>
-                  <p className="text-gray-400 text-sm mt-2">
-                    {casoSeleccionado.descripcion_regla}
-                  </p>
-                </div>
-              </div>
-
-              {/* Análisis Post-Incidente */}
-              <div className="bg-blue-900/20 rounded-xl p-6 border-2 border-blue-500">
-                <h3 className="text-xl font-bold mb-4">📊 Análisis Post-Incidente</h3>
-                <p className="text-gray-300">
-                  Un <strong>SIEM</strong> correlaciona estos eventos en tiempo real y genera una alerta automática cuando detecta el patrón de comportamiento anómalo. Sin monitoreo, estos logs pasan desapercibidos hasta que el daño ya está hecho.
-                </p>
-              </div>
+          {resultado && (
+            <div className={`mt-4 p-4 rounded-lg ${resultado.success ? 'bg-green-900/50 border border-green-600' : 'bg-red-900/50 border border-red-600'}`}>
+              <p className={resultado.success ? 'text-green-400' : 'text-red-400'}>
+                {resultado.message}
+              </p>
             </div>
           )}
         </div>
