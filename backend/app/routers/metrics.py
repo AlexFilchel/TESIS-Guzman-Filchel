@@ -3,9 +3,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
 
-from database import get_db
-from models import Alerta
-from auth import get_current_user
+from app.database import get_db
+from app.models import Alerta
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/metrics", tags=["metrics"])
 

@@ -3,10 +3,10 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
 
-from database import get_db
-from models import Alerta
-from schemas import AlertaResponse, AlertaUpdate
-from auth import get_current_user
+from app.database import get_db
+from app.models import Alerta
+from app.schemas import AlertaResponse, AlertaUpdate
+from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/alertas", tags=["alertas"])
 

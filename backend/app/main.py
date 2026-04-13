@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import alertas, auth, metrics, simulator
-from websocket import websocket_endpoint, broadcast_alerta
+from app.routers import alertas, auth, metrics, simulator
+from app.websocket import websocket_endpoint, broadcast_alerta
 
 app = FastAPI(title="SIEM API", version="1.0.0")
 
