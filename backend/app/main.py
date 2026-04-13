@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import WebSocket, WebSocketDisconnect
 from app.routers import alertas, auth, metrics, simulator
-from app.websocket import websocket_endpoint, broadcast_alerta
+from app.websocket import broadcast_alerta
 
 app = FastAPI(title="SIEM API", version="1.0.0")
 
@@ -21,9 +22,31 @@ app.include_router(metrics.router)
 app.include_router(simulator.router)
 
 # WebSocket
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def send_alerta(self, message: dict):
+        for connection in self.active_connections:
+            await connection.send_json(message)
+
+manager = ConnectionManager()
+
 @app.websocket("/ws/alertas")
-async def ws_alertas(websocket: websocket_endpoint):
-    pass
+async def ws_alertas(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
 
 @app.get("/")
 async def root():
@@ -36,5 +59,5 @@ async def health():
 # Endpoint para broadcast de alertas (usado internamente)
 @app.post("/internal/broadcast-alerta")
 async def internal_broadcast(alerta: dict):
-    await broadcast_alerta(alerta)
+    await manager.send_alerta(alerta)
     return {"status": "broadcasted"}
