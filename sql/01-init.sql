@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS alertas (
    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
    severidad VARCHAR(20) NOT NULL,
    categoria VARCHAR(50) NOT NULL,
-   ip_origen INET,
+   ip_origen VARCHAR(50),
    host_objetivo VARCHAR(255),
    cantidad_eventos INTEGER DEFAULT 1,
    descripcion TEXT,
@@ -12,6 +12,17 @@ CREATE TABLE IF NOT EXISTS alertas (
    asignado_a VARCHAR(100),
    notas TEXT,
    resuelto_en TIMESTAMP
+);
+
+-- Tabla de usuarios para autenticación
+CREATE TABLE IF NOT EXISTS usuarios (
+   id SERIAL PRIMARY KEY,
+   username VARCHAR(50) UNIQUE NOT NULL,
+   email VARCHAR(100) UNIQUE NOT NULL,
+   hashed_password VARCHAR(255) NOT NULL,
+   rol VARCHAR(20) DEFAULT 'analista',
+   activo BOOLEAN DEFAULT true,
+   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS reglas_deteccion (
@@ -39,3 +50,23 @@ VALUES
 ('Escaneo puertos', 'Detecta múltiples paquetes bloqueados por firewall', 'DROP|UFW BLOCK|iptables', 'medium', 5, 300),
 ('Escaneo directorios web', 'Detecta acceso a rutas comunes de ataque web', 'GET.*(admin|phpmyadmin|wp-admin|\\.env)', 'medium', 3, 300)
 ON CONFLICT DO NOTHING;
+
+-- Tabla de usuarios para autenticación
+CREATE TABLE IF NOT EXISTS usuarios (
+   id SERIAL PRIMARY KEY,
+   username VARCHAR(50) UNIQUE NOT NULL,
+   email VARCHAR(100) UNIQUE NOT NULL,
+   hashed_password VARCHAR(255) NOT NULL,
+   rol VARCHAR(20) DEFAULT 'analista',
+   activo BOOLEAN DEFAULT true,
+   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insertar usuario admin default (password: admin123)
+-- Hash bcrypt de 'admin123'
+INSERT INTO usuarios (username, email, hashed_password, rol) 
+VALUES ('admin', 'admin@siem.local', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYqKx8fZ1W6', 'admin')
+ON CONFLICT DO NOTHING;
+
+-- Índices para usuarios
+CREATE INDEX IF NOT EXISTS idx_usuarios_username ON usuarios(username);
