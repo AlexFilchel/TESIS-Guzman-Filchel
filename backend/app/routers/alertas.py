@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from app.database import get_db
 from app.models import Alerta
 from app.schemas import AlertaResponse, AlertaUpdate
-from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/alertas", tags=["alertas"])
 
@@ -19,8 +18,7 @@ async def listar_alertas(
     estado: Optional[str] = None,
     desde: Optional[datetime] = None,
     hasta: Optional[datetime] = None,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     query = db.query(Alerta)
     
@@ -40,8 +38,7 @@ async def listar_alertas(
 @router.get("/{alerta_id}", response_model=AlertaResponse)
 async def obtener_alerta(
     alerta_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     alerta = db.query(Alerta).filter(Alerta.id == alerta_id).first()
     if not alerta:
@@ -52,8 +49,7 @@ async def obtener_alerta(
 async def actualizar_alerta(
     alerta_id: int,
     alerta_update: AlertaUpdate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     alerta = db.query(Alerta).filter(Alerta.id == alerta_id).first()
     if not alerta:

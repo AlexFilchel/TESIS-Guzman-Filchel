@@ -5,15 +5,11 @@ from datetime import datetime, timedelta
 
 from app.database import get_db
 from app.models import Alerta
-from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/metrics", tags=["metrics"])
 
 @router.get("/summary")
-async def get_summary(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
+async def get_summary(db: Session = Depends(get_db)):
     total = db.query(Alerta).count()
     criticas = db.query(Alerta).filter(Alerta.severidad == "critical").count()
     altas = db.query(Alerta).filter(Alerta.severidad == "high").count()
@@ -38,11 +34,7 @@ async def get_summary(
     }
 
 @router.get("/timeline")
-async def get_timeline(
-    dias: int = 7,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
+async def get_timeline(dias: int = 7, db: Session = Depends(get_db)):
     desde = datetime.utcnow() - timedelta(days=dias)
     
     resultados = db.query(
@@ -59,11 +51,7 @@ async def get_timeline(
     ]
 
 @router.get("/top-ips")
-async def get_top_ips(
-    limit: int = 10,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
+async def get_top_ips(limit: int = 10, db: Session = Depends(get_db)):
     resultados = db.query(
         Alerta.ip_origen,
         func.count(Alerta.id).label("alertas"),
@@ -80,10 +68,7 @@ async def get_top_ips(
     ]
 
 @router.get("/by-category")
-async def get_by_category(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
+async def get_by_category(db: Session = Depends(get_db)):
     resultados = db.query(
         Alerta.categoria,
         func.count(Alerta.id).label("cantidad")

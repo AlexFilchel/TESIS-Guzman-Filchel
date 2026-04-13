@@ -5,11 +5,6 @@ import Dashboard from './pages/Dashboard';
 import Simulador from './pages/Simulador';
 import Casos from './pages/Casos';
 
-function ProtectedRoute({ children }) {
-  const token = localStorage.getItem('token');
-  return token ? children : <Navigate to="/login" />;
-}
-
 function AppLayout({ children }) {
   return (
     <div className="flex h-screen bg-gray-900">
@@ -25,37 +20,37 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Login disponible pero no requerido */}
         <Route path="/login" element={<Login />} />
+        
+        {/* Dashboard accesible directamente (sin login) */}
         <Route 
           path="/" 
           element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Dashboard />
-              </AppLayout>
-            </ProtectedRoute>
+            <AppLayout>
+              <Dashboard />
+            </AppLayout>
           } 
         />
+        
         <Route 
           path="/simulador" 
           element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Simulador />
-              </AppLayout>
-            </ProtectedRoute>
+            <AppLayout>
+              <Simulador />
+            </AppLayout>
           } 
         />
+        
         <Route 
           path="/casos" 
           element={
-            <ProtectedRoute>
-              <AppLayout>
-                <Casos />
-              </AppLayout>
-            </ProtectedRoute>
+            <AppLayout>
+              <Casos />
+            </AppLayout>
           } 
         />
+        
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

@@ -5,7 +5,6 @@ import random
 from app.database import get_db
 from app.models import Alerta
 from app.schemas import SimulatorGenerate, SimulatorResponse, AlertaResponse
-from app.auth import get_current_user
 
 router = APIRouter(prefix="/api/simulator", tags=["simulator"])
 
@@ -115,8 +114,7 @@ def generate_log(tipo: str, ip: str = None, username: str = None, cantidad: int 
 @router.post("/generate", response_model=SimulatorResponse)
 async def generate_alerta(
     data: SimulatorGenerate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     # Generar log simulado
     log_crudo, categoria, severidad = generate_log(
