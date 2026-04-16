@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { generateSimulator, getAlertas } from '../services/api';
 
 // =============================================================================
@@ -111,6 +111,19 @@ export default function Casos() {
   const [loading, setLoading] = useState(false);
   const [resultado, setResultado] = useState(null);
   
+  // Para la visualización de logs typewriter
+  const [logsVisibles, setLogsVisibles] = useState([]); // logs que se van mostrando
+  const [pasoSimulacion, setPasoSimulacion] = useState(null); // 'recolectando' | 'analizando' | 'detectado'
+  const [logsCompletos, setLogsCompletos] = useState([]); // todos los logs del caso
+  const logsContainerRef = useRef(null); // Reference para auto-scroll
+  
+  // Auto-scroll cuando aparecen nuevos logs
+  useEffect(() => {
+    if (logsContainerRef.current) {
+      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+    }
+  }, [logsVisibles]);
+  
   // Para la visualización de logs
   const [mostrarAnalizados, setMostrarAnalizados] = useState(false);
 
@@ -119,12 +132,17 @@ export default function Casos() {
     return severidad === 'critical' ? 'bg-red-600' : 'bg-orange-600';
   };
 
-  // Manejar inyección de logs al sistema
+  // Manejar inyección de logs al sistema con efecto typewriter
   const handleSimular = async () => {
     if (!casoSeleccionado) return;
     
+    // Resetear estados
     setLoading(true);
     setResultado(null);
+    setLogsVisibles([]);
+    setLogsCompletos(casoSeleccionado.logs_raw);
+    setPasoSimulacion('recolectando');
+    setLogsInyectados(false);
     
     try {
       // Simular según el tipo de caso
@@ -142,16 +160,31 @@ export default function Casos() {
         ip_origen = '192.168.2.55';
       }
       
+      // LLamar al backend para inyectar logs reales
       const { data } = await generateSimulator({
         tipo,
         ip_origen,
         cantidad
       });
       
+      // Efecto typewriter: mostrar logs uno por uno
+      const totalLogs = casoSeleccionado.logs_raw.length;
+      for (let i = 0; i < totalLogs; i++) {
+        await new Promise(resolve => setTimeout(resolve, 300)); // 300ms entre cada log
+        setLogsVisibles(prev => [...prev, casoSeleccionado.logs_raw[i]]);
+      }
+      
+      // Paso 2: Analizando patrones
+      setPasoSimulacion('analizando');
+      await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s de "análisis"
+      
+      // Paso 3: ¡CORRELACIÓN DETECTADA!
+      setPasoSimulacion('detectado');
+      
       setLogsInyectados(true);
       setResultado({
         success: true,
-        message: `✅ Logs del caso "${casoSeleccionado.titulo}" inyectados al sistema`,
+        message: `Logs del caso "${casoSeleccionado.titulo}" inyectados al sistema`,
         alerta: data.alerta
       });
       
@@ -172,7 +205,7 @@ export default function Casos() {
     return (
       <div className="p-6 space-y-6 overflow-auto h-full">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold">📚 Casos de Estudio Reales</h1>
+          <h1 className="text-3xl font-bold">Casos de Estudio Reales</h1>
           <p className="text-gray-400 mt-2">
             Análisis de incidentes de seguridad donde un SIEM habría detectado o mitigado el ataque
           </p>
@@ -207,7 +240,7 @@ export default function Casos() {
               
               <div className="flex justify-between items-center text-sm">
                 <span className="text-blue-400 font-medium">
-                  Ver análisis completo →
+                  Ver análisis completo
                 </span>
                 <span className="text-gray-500">
                   {caso.timeline.length} pasos
@@ -241,6 +274,9 @@ export default function Casos() {
               setCasoSeleccionado(null);
               setLogsInyectados(false);
               setResultado(null);
+              setLogsVisibles([]);
+              setLogsCompletos([]);
+              setPasoSimulacion(null);
             }}
             className="text-blue-400 hover:text-blue-300 font-medium"
           >
@@ -262,12 +298,12 @@ export default function Casos() {
           </div>
           
           <div className="bg-gray-900/50 rounded-lg p-4 mt-4">
-            <h3 className="font-semibold text-orange-400 mb-2">📋 Contexto del Ataque</h3>
+            <h3 className="font-semibold text-orange-400 mb-2">Contexto del Ataque</h3>
             <p className="text-gray-300">{casoSeleccionado.contexto}</p>
           </div>
           
           <div className="mt-4 p-4 bg-red-900/30 rounded-lg border border-red-700">
-            <h3 className="font-semibold text-red-400 mb-2">💥 Impacto</h3>
+            <h3 className="font-semibold text-red-400 mb-2">Impacto</h3>
             <p className="text-gray-300">{casoSeleccionado.impacto}</p>
           </div>
         </div>
@@ -302,13 +338,13 @@ export default function Casos() {
 
         {/* Comparativa: Logs Raw vs Logs Analizados */}
         <div className="bg-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-bold mb-4">🔍 Logs "Raw" vs Logs Analizados por SIEM</h2>
+          <h2 className="text-xl font-bold mb-4">Logs "Raw" vs Logs Analizados por SIEM</h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Raw Logs - Diffícil de leer */}
             <div className="bg-gray-900 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-red-400">📄</span>
+                <span className="text-red-400"></span>
                 <h3 className="font-semibold text-gray-400">Logs Raw (Sin SIEM)</h3>
               </div>
               <pre className="text-xs text-gray-500 font-mono overflow-x-auto max-h-48">
@@ -323,7 +359,7 @@ export default function Casos() {
             {/* Analizados - Fácil de ver */}
             <div className="bg-gray-900 rounded-lg p-4 border-2 border-red-500">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-green-400">📊</span>
+                <span className="text-green-400"></span>
                 <h3 className="font-semibold text-green-400">Logs Analizados (Con SIEM)</h3>
               </div>
               <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -337,7 +373,7 @@ export default function Casos() {
               </div>
               <div className="mt-3 p-2 bg-green-900/50 rounded">
                 <p className="text-green-400 text-sm font-bold">
-                  ✅ PATRÓN DETECTADO: {casoSeleccionado.regla_deteccion}
+                  PATRON DETECTADO: {casoSeleccionado.regla_deteccion}
                 </p>
               </div>
             </div>
@@ -354,14 +390,14 @@ export default function Casos() {
               </p>
             </div>
             {logsInyectados && (
-              <span className="px-3 py-1 bg-green-600 text-white rounded-full text-sm font-bold">
-                ✅ Logs Inyectados
+              <span className="px-3 py-1 bg-orange-600 text-white rounded-full text-sm font-bold animate-pulse">
+                Simulación Activa
               </span>
             )}
           </div>
           
           <div className="bg-gray-900/50 rounded-lg p-4 mb-4">
-            <h4 className="font-semibold text-orange-400 mb-2">📋 Regla de Detección</h4>
+            <h4 className="font-semibold text-orange-400 mb-2">Regla de Detección</h4>
             <p className="text-gray-300">{casoSeleccionado.descripcion_regla}</p>
           </div>
           
@@ -374,14 +410,90 @@ export default function Casos() {
                 : 'bg-blue-600 hover:bg-blue-500 hover:scale-[1.01] shadow-lg shadow-blue-500/30'
             }`}
           >
-            {loading ? '⏳ Ejecutando...' : '🎯 Ejecutar Simulación de Logs'}
+            {loading 
+              ? pasoSimulacion === 'recolectando' 
+                ? 'Recolectando logs...'
+                : pasoSimulacion === 'analizando'
+                  ? 'Analizando patrones...'
+                  : 'Ejecutando...'
+              : 'Ejecutar Simulación de Logs'
+            }
           </button>
-          
-          {resultado && (
-            <div className={`mt-4 p-4 rounded-lg ${resultado.success ? 'bg-green-900/50 border border-green-600' : 'bg-red-900/50 border border-red-600'}`}>
-              <p className={resultado.success ? 'text-green-400' : 'text-red-400'}>
-                {resultado.message}
-              </p>
+
+          {/* Logs Educativos + Alerta Disparada */}
+          {(logsInyectados || (loading && logsVisibles.length > 0)) && (
+            <div className="space-y-6">
+              {/* Panel de Logs con efecto typewriter */}
+              <div className="bg-gray-800 rounded-xl p-6 border-2 border-orange-500">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold">Logs del Caso</h3>
+                  {loading && pasoSimulacion === 'recolectando' && (
+                    <span className="px-2 py-1 bg-blue-600 rounded text-xs font-bold animate-pulse">
+                      RECOLECTANDO
+                    </span>
+                  )}
+                  {loading && pasoSimulacion === 'analizando' && (
+                    <span className="px-2 py-1 bg-yellow-600 rounded text-xs font-bold animate-pulse">
+                      ANALIZANDO
+                    </span>
+                  )}
+                </div>
+                <p className="text-gray-400 text-sm mb-4">
+                  Eventos registrados durante el incidente:
+                </p>
+                <div 
+                  ref={logsContainerRef}
+                  className="bg-gray-900 rounded-lg p-4 max-h-48 overflow-y-auto"
+                >
+                  {logsVisibles.map((log, idx) => (
+                    <div key={idx} className="p-2 border-b border-gray-800 last:border-0">
+                      <span className="text-orange-400 font-mono text-xs">{log}</span>
+                    </div>
+                  ))}
+                  {loading && logsVisibles.length < logsCompletos.length && (
+                    <div className="flex items-center gap-2 p-2">
+                      <span className="w-2 h-2 bg-orange-400 rounded-full animate-ping"></span>
+                      <span className="text-orange-400 text-xs">Recibiendo más eventos...</span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-between items-center mt-3">
+                  <span className="text-gray-500 text-xs">
+                    {logsVisibles.length} / {logsCompletos.length} eventos recibidos
+                  </span>
+                  <span className="text-orange-400 text-xs font-mono">
+                    {loading ? 'EN VIVO' : 'COMPLETADO'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Alerta Disparada - Solo mostrar cuando se detectó */}
+              {logsInyectados && (
+                <div className="bg-red-950/50 rounded-xl p-6 border-4 border-red-600 animate-pulse shadow-lg shadow-red-600/50">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div>
+                      <h3 className="text-2xl font-bold text-red-200">INCIDENTE DETECTADO</h3>
+                      <p className="text-gray-300 text-sm">Regla de correlación activada</p>
+                    </div>
+                  </div>
+                  <div className="bg-red-900/70 rounded-lg p-4 border-2 border-red-500">
+                    <p className="text-red-100 font-semibold text-lg">
+                      Alerta: "{casoSeleccionado.regla_deteccion}"
+                    </p>
+                    <p className="text-gray-300 text-sm mt-2">
+                      {casoSeleccionado.descripcion_regla}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Análisis Post-Incidente */}
+              <div className="bg-blue-900/20 rounded-xl p-6 border-2 border-blue-500">
+                <h3 className="text-xl font-bold mb-4">Análisis Post-Incidente</h3>
+                <p className="text-gray-300">
+                  Un <strong>SIEM</strong> correlaciona estos eventos en tiempo real y genera una alerta automática cuando detecta el patrón de comportamiento anómalo. Sin monitoreo, estos logs pasan desapercibidos hasta que el daño ya está hecho.
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -394,7 +506,6 @@ export default function Casos() {
             {/* Sin SIEM */}
             <div className="bg-red-900/30 rounded-lg p-4 border-2 border-red-600">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-red-400 text-2xl">❌</span>
                 <h3 className="font-bold text-red-400">SIN SIEM (Escenario Real)</h3>
               </div>
               <div className="space-y-3">
@@ -416,7 +527,6 @@ export default function Casos() {
             {/* Con SIEM */}
             <div className="bg-green-900/30 rounded-lg p-4 border-2 border-green-600">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-green-400 text-2xl">✅</span>
                 <h3 className="font-bold text-green-400">CON SIEM (Propuesto)</h3>
               </div>
               <div className="space-y-3">
@@ -439,7 +549,7 @@ export default function Casos() {
 
         {/* Conclusión Técnica */}
         <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-xl p-6 border border-blue-500">
-          <h2 className="text-xl font-bold mb-4">🎓 Conclusión Técnica</h2>
+          <h2 className="text-xl font-bold mb-4">Conclusión Técnica</h2>
           <div className="p-4 bg-black/30 rounded-lg">
             <p className="text-lg text-gray-200 leading-relaxed">
               {casoSeleccionado.conclusion}
@@ -449,13 +559,13 @@ export default function Casos() {
           {/* Badges finales */}
           <div className="flex flex-wrap gap-3 mt-4">
             <span className="px-4 py-2 bg-green-600 rounded-full font-bold">
-              ✅Detectado
+              Detectado
             </span>
             <span className="px-4 py-2 bg-orange-600 rounded-full font-bold">
-              ⚡MTTD Reducido
+              MTTD Reducido
             </span>
             <span className="px-4 py-2 bg-blue-600 rounded-full font-bold">
-              📊Correlación de Eventos
+              Correlación de Eventos
             </span>
           </div>
         </div>
