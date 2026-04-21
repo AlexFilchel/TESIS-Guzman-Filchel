@@ -9,7 +9,7 @@ const severityColors = {
 
 export default function AlertsChart({ data, title = "Tendencia de Alertas" }) {
   // Procesar datos para gráfico de líneas por severidad
-  const chartData = data?.reduce((acc, item) => {
+  const chartData = (data?.reduce((acc, item) => {
     const existing = acc.find(d => d.fecha === item.fecha);
     if (existing) {
       existing[item.severidad] = (existing[item.severidad] || 0) + item.cantidad;
@@ -17,7 +17,7 @@ export default function AlertsChart({ data, title = "Tendencia de Alertas" }) {
       acc.push({ fecha: item.fecha, [item.severidad]: item.cantidad });
     }
     return acc;
-  }, []) || [];
+  }, []) || []).sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">

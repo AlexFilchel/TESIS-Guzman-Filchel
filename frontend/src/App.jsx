@@ -42,8 +42,19 @@ export default function App() {
           } 
         />
         
+        {/* Selección de casos (mantener para referencia) */}
         <Route 
           path="/casos" 
+          element={
+            <AppLayout>
+              <Casos caseId={null} />
+            </AppLayout>
+          } 
+        />
+
+        {/* Rutas individuales para cada caso */}
+        <Route 
+          path="/casos/:caseId" 
           element={
             <AppLayout>
               <Casos />

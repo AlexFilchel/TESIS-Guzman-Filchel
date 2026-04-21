@@ -67,8 +67,7 @@ export default function Simulador() {
   return (
     <div className="p-6 space-y-6 overflow-auto h-full">
       <div>
-        <h1 className="text-2xl font-bold">🧪 Simulador de Logs</h1>
-        <p className="text-gray-400 text-sm">Genera alertas de prueba para verificar el sistema</p>
+        <h1 className="text-3xl font-bold">Simulador de Logs</h1>
       </div>
 
       {/* Panel de Control */}
@@ -86,14 +85,14 @@ export default function Simulador() {
 
       {/* Selector Personalizado */}
       <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-        <h3 className="text-lg font-semibold mb-4">Simulación Personalizada</h3>
+        <h3 className="text-xl font-semibold mb-4">Simulación Personalizada</h3>
         <div className="flex flex-wrap gap-3">
           {tipos.map((tipo) => (
             <button
               key={tipo.tipo}
               onClick={() => handleManualTrigger(tipo.tipo)}
               disabled={loading}
-              className="bg-gray-700 hover:bg-gray-600 disabled:opacity-50 px-4 py-2 rounded text-sm flex items-center gap-2"
+              className="bg-gray-700 hover:bg-gray-600 disabled:opacity-50 px-4 py-2 rounded text-base font-medium flex items-center gap-2"
             >
               <span className={`w-2 h-2 rounded-full ${
                 tipo.severidad === 'critical' ? 'bg-red-500' :
@@ -104,9 +103,6 @@ export default function Simulador() {
             </button>
           ))}
         </div>
-        <p className="text-gray-500 text-xs mt-2">
-          {tipos.length} tipos de simulación disponibles
-        </p>
       </div>
 
       {/* Lista de Alertas Generadas */}

@@ -1,11 +1,11 @@
 export default function StatsCard({ title, value, color = 'blue', icon }) {
   const colors = {
-    blue: 'text-blue-400',
-    red: 'text-red-400',
-    orange: 'text-orange-400',
-    green: 'text-green-400',
-    yellow: 'text-yellow-400',
-    purple: 'text-purple-400'
+    blue: 'text-white',
+    red: 'text-white',
+    orange: 'text-white',
+    green: 'text-white',
+    yellow: 'text-white',
+    purple: 'text-white'
   };
 
   const bgColors = {
@@ -21,10 +21,9 @@ export default function StatsCard({ title, value, color = 'blue', icon }) {
     <div className={`bg-gray-800 rounded-lg p-4 border ${bgColors[color]}`}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-400 text-sm">{title}</p>
-          <p className={`text-2xl font-bold ${colors[color]}`}>{value}</p>
+          <p className="text-gray-300 text-base font-medium">{title}</p>
+          <p className={`text-4xl font-bold ${colors[color]}`}>{value}</p>
         </div>
-        {icon && <span className="text-2xl">{icon}</span>}
       </div>
     </div>
   );

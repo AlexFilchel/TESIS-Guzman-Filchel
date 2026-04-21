@@ -82,6 +82,37 @@ LOG_TEMPLATES = {
         "umbral": 1,
         "template": "X-Handler: ${{${{runtime.exec(\"{cmd}\")}}}}",
         "host": "web01"
+    },
+    # =============================================================================
+    # PRUEBAS RÁPIDAS - Pruebas por severidad
+    # =============================================================================
+    "critical_alert": {
+        "categoria": "critical_test",
+        "severidad": "critical",
+        "umbral": 1,
+        "template": "Critical security event detected: {event}",
+        "host": "server1"
+    },
+    "high_alert": {
+        "categoria": "high_test",
+        "severidad": "high",
+        "umbral": 1,
+        "template": "High priority security alert: {event}",
+        "host": "server1"
+    },
+    "medium_alert": {
+        "categoria": "medium_test",
+        "severidad": "medium",
+        "umbral": 1,
+        "template": "Medium priority security alert: {event}",
+        "host": "server1"
+    },
+    "low_alert": {
+        "categoria": "low_test",
+        "severidad": "low",
+        "umbral": 1,
+        "template": "Low priority security alert: {event}",
+        "host": "server1"
     }
 }
 
@@ -128,6 +159,10 @@ def generate_log(tipo: str, ip: str = None, username: str = None, cantidad: int 
             # Simula explotación web (caso Equifax)
             cmd = random.choice(["whoami", "id", "cat /etc/passwd", "ls -la"])
             msg = template_data["template"].format(cmd=cmd)
+        elif tipo in ["critical_alert", "high_alert", "medium_alert", "low_alert"]:
+            # Pruebas rápidas por severidad
+            events = ["unauthorized access attempt", "suspicious network activity", "policy violation", "configuration change", "access denied"]
+            msg = template_data["template"].format(event=random.choice(events))
         else:
             msg = template_data["template"]
         

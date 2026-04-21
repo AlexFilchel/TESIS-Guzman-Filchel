@@ -71,42 +71,36 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard - Monitoreo de Seguridad</h1>
-          <p className="text-gray-400 text-sm">Resumen de alertas y métricas</p>
+          <h1 className="text-3xl font-bold">Monitoreo de Seguridad</h1>
         </div>
-        <button 
-          onClick={loadData}
-          className="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm"
-        >
-          🔄 Actualizar
-        </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <StatsCard 
           title="Total Alertas" 
           value={metrics?.total || 0} 
           color="blue" 
-          icon="📊"
         />
         <StatsCard 
-          title="Críticas" 
+          title="Critical" 
           value={porSeveridad.critical} 
           color="red" 
-          icon="🚨"
         />
         <StatsCard 
-          title="Altas" 
+          title="High" 
           value={porSeveridad.high} 
           color="orange" 
-          icon="⚠️"
         />
         <StatsCard 
-          title="Nuevas" 
-          value={metrics?.por_estado?.nuevas || 0} 
+          title="Medium" 
+          value={porSeveridad.medium} 
           color="yellow" 
-          icon="🆕"
+        />
+        <StatsCard 
+          title="Low" 
+          value={porSeveridad.low} 
+          color="green" 
         />
       </div>
 

@@ -1,17 +1,17 @@
 import { generateSimulator } from '../services/api';
 
-const tiposAtaque = [
-  { tipo: 'ssh_brute_force', nombre: 'SSH Brute Force', severidad: 'high', icono: '🔓' },
-  { tipo: 'root_login', nombre: 'Root Login', severidad: 'critical', icono: '👤' },
-  { tipo: 'sudo_abuse', nombre: 'sudo Abuse', severidad: 'medium', icono: '⚡' },
-  { tipo: 'port_scan', nombre: 'Port Scan', severidad: 'medium', icono: '🔍' },
-  { tipo: 'directory_scan', nombre: 'Directory Scan', severidad: 'medium', icono: '📁' },
+const pruebasRapidas = [
+  { tipo: 'critical_alert', nombre: 'Critical', severidad: 'critical', icono: '🚨' },
+  { tipo: 'high_alert', nombre: 'High', severidad: 'high', icono: '⚠️' },
+  { tipo: 'medium_alert', nombre: 'Medium', severidad: 'medium', icono: '⚡' },
+  { tipo: 'low_alert', nombre: 'Low', severidad: 'low', icono: '📋' },
 ];
 
 const severityColors = {
   critical: 'bg-red-600 hover:bg-red-500',
   high: 'bg-orange-600 hover:bg-orange-500',
   medium: 'bg-yellow-600 hover:bg-yellow-500',
+  low: 'bg-green-600 hover:bg-green-500',
 };
 
 export default function QuickTest({ onAlertaGenerada, loading, setLoading }) {
@@ -34,20 +34,22 @@ export default function QuickTest({ onAlertaGenerada, loading, setLoading }) {
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-      <h3 className="text-lg font-semibold mb-4">🧪 Pruebas Rápidas</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-        {tiposAtaque.map((ataque) => (
+      <h3 className="text-lg font-semibold mb-4">Pruebas Rápidas</h3>
+      
+      {/* Pruebas por Severidad */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        {pruebasRapidas.map((prueba) => (
           <button
-            key={ataque.tipo}
-            onClick={() => handleTest(ataque.tipo)}
+            key={prueba.tipo}
+            onClick={() => handleTest(prueba.tipo)}
             disabled={loading}
-            className={`${severityColors[ataque.severidad]} disabled:opacity-50 px-3 py-2 rounded text-sm font-medium flex items-center gap-2 transition-colors`}
+            className={`${severityColors[prueba.severidad]} disabled:opacity-50 px-3 py-2 rounded text-base font-medium transition-colors`}
           >
-            <span>{ataque.icono}</span>
-            <span className="truncate">{ataque.nombre}</span>
+            <span>{prueba.nombre}</span>
           </button>
         ))}
       </div>
+
       {loading && (
         <p className="text-gray-400 text-sm mt-2">Ejecutando prueba...</p>
       )}

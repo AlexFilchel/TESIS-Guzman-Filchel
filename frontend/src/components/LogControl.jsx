@@ -1,8 +1,8 @@
 export default function LogControl({ onTrigger, loading }) {
   const niveles = [
-    { id: 'info', label: 'Info', color: 'bg-blue-600 hover:bg-blue-500', icon: 'ℹ️' },
-    { id: 'warning', label: 'Warning', color: 'bg-yellow-600 hover:bg-yellow-500', icon: '⚠️' },
-    { id: 'critical_event', label: 'Critical', color: 'bg-red-600 hover:bg-red-500', icon: '🚨' },
+    { id: 'info', label: 'Info', color: 'bg-blue-600 hover:bg-blue-500' },
+    { id: 'warning', label: 'Warning', color: 'bg-yellow-600 hover:bg-yellow-500' },
+    { id: 'critical_event', label: 'Critical', color: 'bg-red-600 hover:bg-red-500' },
   ];
 
   return (
@@ -14,9 +14,8 @@ export default function LogControl({ onTrigger, loading }) {
             key={nivel.id}
             onClick={() => onTrigger(nivel.id)}
             disabled={loading}
-            className={`${nivel.color} disabled:opacity-50 px-4 py-2 rounded font-semibold flex items-center gap-2 transition-colors`}
+            className={`${nivel.color} disabled:opacity-50 px-4 py-2 rounded font-semibold transition-colors`}
           >
-            <span>{nivel.icon}</span>
             <span>{nivel.label}</span>
           </button>
         ))}
