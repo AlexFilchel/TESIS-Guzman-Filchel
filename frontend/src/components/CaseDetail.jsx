@@ -282,12 +282,12 @@ export default function CaseDetail() {
                    </div>
                  </div>
                  <div className="bg-red-900/70 rounded-lg p-4 border-2 border-red-500">
-                   <p className="text-white font-semibold text-lg">
-                     Alerta: "{casoSeleccionado.regla_deteccion}"
+                    <p className="text-white font-semibold text-lg">
+                      Alerta #{resultado.alerta.id}: {resultado.alerta.descripcion}
+                    </p>
+                   <p className="text-gray-300 text-sm mt-2">
+                     Categoría: {resultado.alerta.categoria} | Severidad: {resultado.alerta.severidad} | IP Origen: {resultado.alerta.ip_origen} | Fecha: {new Date(resultado.alerta.fecha).toLocaleString()}
                    </p>
-                  <p className="text-gray-300 text-sm mt-2">
-                    {casoSeleccionado.descripcion_regla}
-                  </p>
                 </div>
               </div>
             )}
