@@ -20,9 +20,11 @@ export default function CaseDetail() {
   const [logsCompletos, setLogsCompletos] = useState([]);
   const [logsInyectados, setLogsInyectados] = useState(false);
   const logsContainerRef = useRef(null);
+  const scrollRef = useRef(null);
 
   // Resetear estado cuando cambia el caseId
   useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0);
     setLoading(false);
     setResultado(null);
     setLogsVisibles([]);
@@ -132,7 +134,7 @@ export default function CaseDetail() {
   };
 
   return (
-    <div className="p-6 space-y-6 overflow-auto h-full">
+    <div ref={scrollRef} className="p-6 space-y-6 overflow-auto h-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <button

@@ -143,8 +143,9 @@ services:
   frontend:
     build: ./frontend
     container_name: siem_frontend
+    # Nota: se cambió de 3000:3000 a 3002:3000 porque el puerto 3000 ya estaba ocupado por otro proceso en el host
     ports:
-      - "3000:3000"
+      - "3002:3000"
     environment:
       - VITE_API_URL=http://localhost:8000
       - VITE_WS_URL=ws://localhost:8000
