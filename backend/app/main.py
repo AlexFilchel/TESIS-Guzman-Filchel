@@ -1,6 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, alertas, metrics, simulator, reglas
+from app.routers import auth, alertas, metrics, simulator, reglas, logs
 from app.websocket import manager
 
 app = FastAPI(title="SIEM API", version="1.0.0")
@@ -18,6 +18,7 @@ app.include_router(alertas.router)
 app.include_router(metrics.router)
 app.include_router(simulator.router)
 app.include_router(reglas.router)
+app.include_router(logs.router)
 
 
 @app.get("/")

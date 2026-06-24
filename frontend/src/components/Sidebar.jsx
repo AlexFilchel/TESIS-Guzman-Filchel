@@ -5,6 +5,7 @@ const mainNavItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
   { path: '/simulador', label: 'Laboratorio', icon: '🧪' },
   { path: '/reglas', label: 'Reglas', icon: '📋' },
+  { path: '/logs', label: 'Logs', icon: '📄' },
 ];
 
 const caseItems = [

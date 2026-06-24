@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard';
 import Simulador from './pages/Simulador';
 import Casos from './pages/Casos';
 import Reglas from './pages/Reglas';
+import Logs from './pages/Logs';
 
 function AppLayout({ children }) {
   return (
@@ -68,6 +69,15 @@ export default function App() {
           element={
             <AppLayout>
               <Reglas />
+            </AppLayout>
+          }
+        />
+
+        <Route
+          path="/logs"
+          element={
+            <AppLayout>
+              <Logs />
             </AppLayout>
           }
         />

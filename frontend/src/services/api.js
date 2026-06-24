@@ -58,4 +58,7 @@ export const getSimulatorTipos = () => api.get('/api/simulator/tipos');
 export const getReglas = () => api.get('/api/reglas/');
 export const toggleRegla = (id) => api.patch(`/api/reglas/${id}/toggle`);
 
+// Logs
+export const getLogs = (params) => api.get('/api/logs/', { params });
+
 export default api;
