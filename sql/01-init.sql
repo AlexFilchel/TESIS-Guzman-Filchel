@@ -48,19 +48,9 @@ VALUES
 ('Intento login root', 'Detecta intento de autenticación como root', 'Failed password for root', 'critical', 1, 60),
 ('Uso sospechoso de sudo', 'Detecta múltiples ejecuciones de sudo', 'sudo', 'medium', 10, 600),
 ('Escaneo puertos', 'Detecta múltiples paquetes bloqueados por firewall', 'DROP|UFW BLOCK|iptables', 'medium', 5, 300),
-('Escaneo directorios web', 'Detecta acceso a rutas comunes de ataque web', 'GET.*(admin|phpmyadmin|wp-admin|\\.env)', 'medium', 3, 300)
+('Escaneo directorios web', 'Detecta acceso a rutas comunes de ataque web', 'GET.*(admin|phpmyadmin|wp-admin|\\.env)', 'medium', 3, 300),
+('SQL Injection', 'Detecta intentos de inyección SQL en peticiones web', 'union.*select|drop.*table', 'critical', 1, 300)
 ON CONFLICT DO NOTHING;
-
--- Tabla de usuarios para autenticación
-CREATE TABLE IF NOT EXISTS usuarios (
-   id SERIAL PRIMARY KEY,
-   username VARCHAR(50) UNIQUE NOT NULL,
-   email VARCHAR(100) UNIQUE NOT NULL,
-   hashed_password VARCHAR(255) NOT NULL,
-   rol VARCHAR(20) DEFAULT 'analista',
-   activo BOOLEAN DEFAULT true,
-   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
 -- Insertar usuario admin default (password: admin123)
 -- Hash bcrypt de 'admin123'
