@@ -5,7 +5,6 @@ import SeverityPieChart from '../components/SeverityPieChart';
 import AlertaCard from '../components/AlertaCard';
 import AlertaModal from '../components/AlertaModal';
 import AlertToast from '../components/AlertToast';
-import QuickTest from '../components/QuickTest';
 import { getMetrics, getTimeline, getAlertas, updateAlerta } from '../services/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 
@@ -16,7 +15,6 @@ export default function Dashboard() {
   const [alertaSeleccionada, setAlertaSeleccionada] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [testLoading, setTestLoading] = useState(false);
 
   const { lastMessage, connected } = useWebSocket();
 
@@ -48,11 +46,6 @@ export default function Dashboard() {
     loadData();
     setToast(lastMessage);
   }, [lastMessage, loadData]);
-
-  const handleAlertaGenerada = (alerta) => {
-    setToast(alerta);
-    loadData(); // Recargar datos
-  };
 
   const handleActualizar = async (id, update) => {
     try {
@@ -123,13 +116,6 @@ export default function Dashboard() {
         <AlertsChart data={timeline} title="Tendencia de Alertas (7 días)" />
         <SeverityPieChart data={porSeveridad} title="Distribución por Severidad" />
       </div>
-
-      {/* Quick Test */}
-      <QuickTest 
-        onAlertaGenerada={handleAlertaGenerada} 
-        loading={testLoading}
-        setLoading={setTestLoading}
-      />
 
       {/* Alertas Recientes */}
       <div>

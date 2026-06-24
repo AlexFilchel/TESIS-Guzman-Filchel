@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 
 const mainNavItems = [
   { path: '/', label: 'Dashboard', icon: '📊' },
-  { path: '/simulador', label: 'Simulador', icon: '🧪' },
+  { path: '/simulador', label: 'Laboratorio', icon: '🧪' },
   { path: '/reglas', label: 'Reglas', icon: '📋' },
 ];
 
