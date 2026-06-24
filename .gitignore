@@ -69,3 +69,11 @@ build/
 *.bak
 *.tmp
 .cache/
+
+# ====== HERRAMIENTAS DE IA ======
+.gemini/
+.opencode/
+.windsurf/
+.github/prompts/
+.github/skills/
+openspec/
