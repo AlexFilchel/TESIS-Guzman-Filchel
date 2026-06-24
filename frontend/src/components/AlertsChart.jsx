@@ -31,7 +31,7 @@ export default function AlertsChart({ data, title = "Tendencia de Alertas" }) {
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
             <XAxis dataKey="fecha" stroke="#9ca3af" fontSize={12} tickFormatter={(v) => v?.slice(5) || ''} />
-            <YAxis stroke="#9ca3af" fontSize={12} />
+            <YAxis stroke="#9ca3af" fontSize={12} allowDecimals={false} />
             <Tooltip 
               contentStyle={{ backgroundColor: '#1f2937', border: '1px solid #374151', borderRadius: '8px' }}
               labelStyle={{ color: '#9ca3af' }}

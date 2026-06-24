@@ -7,6 +7,7 @@ import AlertaModal from '../components/AlertaModal';
 import AlertToast from '../components/AlertToast';
 import QuickTest from '../components/QuickTest';
 import { getMetrics, getTimeline, getAlertas, updateAlerta } from '../services/api';
+import { useWebSocket } from '../hooks/useWebSocket';
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState(null);
@@ -16,6 +17,8 @@ export default function Dashboard() {
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
   const [testLoading, setTestLoading] = useState(false);
+
+  const { lastMessage } = useWebSocket();
 
   const loadData = useCallback(async () => {
     try {
@@ -36,10 +39,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData();
-    // Refrescar cada 30 segundos
     const interval = setInterval(loadData, 30000);
     return () => clearInterval(interval);
   }, [loadData]);
+
+  useEffect(() => {
+    if (!lastMessage) return;
+    loadData();
+    setToast(lastMessage);
+  }, [lastMessage, loadData]);
 
   const handleAlertaGenerada = (alerta) => {
     setToast(alerta);
