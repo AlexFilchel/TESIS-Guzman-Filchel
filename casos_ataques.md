@@ -1,3 +1,4 @@
+
 # 5. Casos de Estudio - Implementación Frontend
 
 > **Nota:** Los casos reales implementados en el frontend del sistema SIEM se encuentran en:
@@ -7,6 +8,9 @@
 ---
 
 ## 5.1 Caso A: RENAPER (Argentina, 2021)
+
+## 5.1 Caso 1: RENAPER (Argentina, 2021)
+
 
 ### 5.1.1 Descripción técnica del ataque
 
@@ -320,3 +324,4 @@ Mar 25 08:29:06 webserver nginx: 203.0.113.25 - - [25/Mar/2024:08:29:06] "GET /w
 ---
 
 **Fin del documento**
+
