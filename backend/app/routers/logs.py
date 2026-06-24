@@ -9,7 +9,7 @@ ES_URL = os.getenv("ELASTICSEARCH_URL", "http://elasticsearch:9200")
 
 
 def es_search(body: dict, size: int = 50):
-    url = f"{ES_URL}/siem-syslog-*/_search"
+    url = f"{ES_URL}/siem-*/_search"
     payload = json.dumps(body).encode()
     req = urllib.request.Request(
         url,
