@@ -18,7 +18,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [testLoading, setTestLoading] = useState(false);
 
-  const { lastMessage } = useWebSocket();
+  const { lastMessage, connected } = useWebSocket();
 
   const loadData = useCallback(async () => {
     try {
@@ -80,6 +80,12 @@ export default function Dashboard() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">Monitoreo de Seguridad</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-sm font-medium ${connected ? 'text-green-400' : 'text-gray-500'}`}>
+            <span className={`inline-block w-2 h-2 rounded-full mr-1.5 ${connected ? 'bg-green-400' : 'bg-gray-500'}`} />
+            {connected ? 'En vivo' : 'Desconectado'}
+          </span>
         </div>
       </div>
 
