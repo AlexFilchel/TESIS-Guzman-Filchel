@@ -4,6 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Simulador from './pages/Simulador';
 import Casos from './pages/Casos';
+import Reglas from './pages/Reglas';
 
 function AppLayout({ children }) {
   return (
@@ -62,6 +63,15 @@ export default function App() {
           } 
         />
         
+        <Route
+          path="/reglas"
+          element={
+            <AppLayout>
+              <Reglas />
+            </AppLayout>
+          }
+        />
+
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

@@ -54,4 +54,8 @@ export const getByCategory = () => api.get('/api/metrics/by-category');
 export const generateSimulator = (data) => api.post('/api/simulator/generate', data);
 export const getSimulatorTipos = () => api.get('/api/simulator/tipos');
 
+// Reglas
+export const getReglas = () => api.get('/api/reglas/');
+export const toggleRegla = (id) => api.patch(`/api/reglas/${id}/toggle`);
+
 export default api;
