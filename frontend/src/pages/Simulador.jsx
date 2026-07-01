@@ -67,7 +67,7 @@ export default function Simulador() {
   return (
     <div className="p-6 space-y-6 overflow-auto h-full">
       <div>
-        <h1 className="text-3xl font-bold">Simulador de Logs</h1>
+        <h1 className="text-3xl font-bold">Laboratorio de Simulación</h1>
       </div>
 
       {/* Panel de Control */}
