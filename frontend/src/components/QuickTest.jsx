@@ -1,10 +1,10 @@
 import { generateSimulator } from '../services/api';
 
 const pruebasRapidas = [
-  { tipo: 'critical_alert', nombre: 'Critical', severidad: 'critical', icono: '🚨' },
-  { tipo: 'high_alert', nombre: 'High', severidad: 'high', icono: '⚠️' },
-  { tipo: 'medium_alert', nombre: 'Medium', severidad: 'medium', icono: '⚡' },
-  { tipo: 'low_alert', nombre: 'Low', severidad: 'low', icono: '📋' },
+  { tipo: 'critical_alert', nombre: 'Crítica', severidad: 'critical', icono: '🚨' },
+  { tipo: 'high_alert', nombre: 'Alta', severidad: 'high', icono: '⚠️' },
+  { tipo: 'medium_alert', nombre: 'Media', severidad: 'medium', icono: '⚡' },
+  { tipo: 'low_alert', nombre: 'Baja', severidad: 'low', icono: '📋' },
 ];
 
 const severityColors = {

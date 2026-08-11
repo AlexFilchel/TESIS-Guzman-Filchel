@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import CaseDetail from '../components/CaseDetail';
 import { CASOS_REALES } from '../data/casesData';
+import { traducirSeveridad } from '../utils/labels';
 
 const getSeverityColor = (severidad) => {
   return severidad === 'critical' ? 'bg-red-600' : 'bg-orange-600';
@@ -41,7 +42,7 @@ export default function Casos() {
                 <h2 className="text-xl font-bold mt-1">{caso.titulo}</h2>
               </div>
               <span className={`px-3 py-1 rounded-full text-sm font-bold ${getSeverityColor(caso.severidad)} text-white`}>
-                {caso.severidad.toUpperCase()}
+                {traducirSeveridad(caso.severidad).toUpperCase()}
               </span>
             </div>
 

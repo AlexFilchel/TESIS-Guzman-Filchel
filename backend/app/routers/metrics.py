@@ -2,11 +2,32 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from statistics import mean, median, pstdev
 
 from app.database import get_db
 from app.models import Alerta
 
 router = APIRouter(prefix="/api/metrics", tags=["metrics"])
+
+
+def _segundos(desde, hasta):
+    if desde is None or hasta is None:
+        return None
+    return (hasta - desde).total_seconds()
+
+
+def _resumen(valores):
+    limpios = [v for v in valores if v is not None]
+    if not limpios:
+        return None
+    return {
+        "n": len(limpios),
+        "media": round(mean(limpios), 2),
+        "mediana": round(median(limpios), 2),
+        "min": round(min(limpios), 2),
+        "max": round(max(limpios), 2),
+        "desvio": round(pstdev(limpios), 2) if len(limpios) > 1 else 0.0
+    }
 
 @router.get("/summary")
 async def get_summary(db: Session = Depends(get_db)):
@@ -17,8 +38,9 @@ async def get_summary(db: Session = Depends(get_db)):
     bajas = db.query(Alerta).filter(Alerta.severidad == "low").count()
     
     nuevas = db.query(Alerta).filter(Alerta.estado == "nueva").count()
+    investigadas = db.query(Alerta).filter(Alerta.estado == "investigada").count()
     resueltas = db.query(Alerta).filter(Alerta.estado == "resuelta").count()
-    
+
     return {
         "total": total,
         "por_severidad": {
@@ -29,6 +51,7 @@ async def get_summary(db: Session = Depends(get_db)):
         },
         "por_estado": {
             "nuevas": nuevas,
+            "investigadas": investigadas,
             "resueltas": resueltas
         }
     }
@@ -73,5 +96,41 @@ async def get_by_category(db: Session = Depends(get_db)):
         Alerta.categoria,
         func.count(Alerta.id).label("cantidad")
     ).group_by(Alerta.categoria).all()
-    
+
     return [{"categoria": r.categoria, "cantidad": r.cantidad} for r in resultados]
+
+@router.get("/tiempos")
+async def get_tiempos(db: Session = Depends(get_db)):
+    alertas = db.query(Alerta).all()
+
+    mttd, mtta, mttr = [], [], []
+    por_categoria = {}
+
+    for a in alertas:
+        d = _segundos(a.evento_generado_en, a.fecha)
+        t = _segundos(a.fecha, a.reconocida_en)
+        r = _segundos(a.fecha, a.resuelto_en)
+        mttd.append(d)
+        mtta.append(t)
+        mttr.append(r)
+
+        cat = por_categoria.setdefault(a.categoria, {"mttd": [], "mtta": [], "mttr": []})
+        cat["mttd"].append(d)
+        cat["mtta"].append(t)
+        cat["mttr"].append(r)
+
+    return {
+        "global": {
+            "mttd": _resumen(mttd),
+            "mtta": _resumen(mtta),
+            "mttr": _resumen(mttr)
+        },
+        "por_categoria": {
+            categoria: {
+                "mttd": _resumen(valores["mttd"]),
+                "mtta": _resumen(valores["mtta"]),
+                "mttr": _resumen(valores["mttr"])
+            }
+            for categoria, valores in por_categoria.items()
+        }
+    }

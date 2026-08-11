@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { generateSimulator } from '../services/api';
 import { getCaseById } from '../data/casesData';
 import ComparisonTimeline from './ComparisonTimeline';
+import { traducirSeveridad, traducirCategoria } from '../utils/labels';
 
 const getSeverityColor = (severidad) => {
   return severidad === 'critical' ? 'bg-red-600' : 'bg-orange-600';
@@ -288,7 +289,7 @@ export default function CaseDetail() {
                       Alerta #{resultado.alerta.id}: {resultado.alerta.descripcion}
                     </p>
                    <p className="text-gray-300 text-sm mt-2">
-                     Categoría: {resultado.alerta.categoria} | Severidad: {resultado.alerta.severidad} | IP Origen: {resultado.alerta.ip_origen} | Fecha: {new Date(resultado.alerta.fecha).toLocaleString()}
+                     Categoría: {traducirCategoria(resultado.alerta.categoria)} | Severidad: {traducirSeveridad(resultado.alerta.severidad)} | IP Origen: {resultado.alerta.ip_origen} | Fecha: {new Date(resultado.alerta.fecha).toLocaleString()}
                    </p>
                 </div>
               </div>

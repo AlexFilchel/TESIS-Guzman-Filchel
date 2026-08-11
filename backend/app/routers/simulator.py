@@ -177,6 +177,8 @@ async def generate_alerta(
     data: SimulatorGenerate,
     db: Session = Depends(get_db)
 ):
+    evento_generado_en = datetime.utcnow()
+
     # Generar log simulado
     log_crudo, categoria, severidad = generate_log(
         data.tipo,
@@ -184,12 +186,13 @@ async def generate_alerta(
         data.username,
         data.cantidad
     )
-    
+
     # Determinar cantidad de eventos
     cantidad = data.cantidad or 1
-    
+
     # Crear alerta
     nueva_alerta = Alerta(
+        evento_generado_en=evento_generado_en,
         fecha=datetime.utcnow(),
         severidad=severidad,
         categoria=categoria,

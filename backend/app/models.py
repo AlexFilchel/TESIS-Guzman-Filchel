@@ -6,7 +6,9 @@ class Alerta(Base):
     __tablename__ = "alertas"
     
     id = Column(Integer, primary_key=True, index=True)
+    evento_generado_en = Column(DateTime)
     fecha = Column(DateTime, default=func.now())
+    reconocida_en = Column(DateTime)
     severidad = Column(String(20), nullable=False)
     categoria = Column(String(50), nullable=False)
     ip_origen = Column(String(50))

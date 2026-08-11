@@ -21,10 +21,12 @@ class AlertaUpdate(BaseModel):
 
 class AlertaResponse(AlertaBase):
     id: int
+    evento_generado_en: Optional[datetime] = None
     fecha: datetime
+    reconocida_en: Optional[datetime] = None
     estado: str
     resuelto_en: Optional[datetime] = None
-    
+
     class Config:
         from_attributes = True
 

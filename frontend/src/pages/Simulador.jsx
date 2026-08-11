@@ -115,10 +115,10 @@ export default function Simulador() {
             className="bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm"
           >
             <option value="">Todas las severidades</option>
-            <option value="critical">Critical</option>
-            <option value="high">High</option>
-            <option value="medium">Medium</option>
-            <option value="low">Low</option>
+            <option value="critical">Crítica</option>
+            <option value="high">Alta</option>
+            <option value="medium">Media</option>
+            <option value="low">Baja</option>
           </select>
         </div>
         

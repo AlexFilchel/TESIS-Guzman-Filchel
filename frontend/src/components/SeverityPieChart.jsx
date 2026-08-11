@@ -1,4 +1,5 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { traducirSeveridad } from '../utils/labels';
 
 const severityColors = {
   critical: '#ef4444',
@@ -10,7 +11,7 @@ const severityColors = {
 export default function SeverityPieChart({ data, title = "Distribución por Severidad" }) {
   // Transformar datos para el gráfico de torta
   const chartData = data ? Object.entries(data).map(([key, value]) => ({
-    name: key.charAt(0).toUpperCase() + key.slice(1),
+    name: traducirSeveridad(key),
     value: value,
     color: severityColors[key] || '#6b7280'
   })) : [];

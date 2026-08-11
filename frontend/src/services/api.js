@@ -49,6 +49,7 @@ export const getMetrics = () => api.get('/api/metrics/summary');
 export const getTimeline = (dias = 7) => api.get(`/api/metrics/timeline?dias=${dias}`);
 export const getTopIps = () => api.get('/api/metrics/top-ips');
 export const getByCategory = () => api.get('/api/metrics/by-category');
+export const getTiempos = () => api.get('/api/metrics/tiempos');
 
 // Simulator
 export const generateSimulator = (data) => api.post('/api/simulator/generate', data);

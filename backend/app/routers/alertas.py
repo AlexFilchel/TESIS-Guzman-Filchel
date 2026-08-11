@@ -59,7 +59,9 @@ async def actualizar_alerta(
     for key, value in update_data.items():
         setattr(alerta, key, value)
     
-    if alerta_update.estado == "resuelta":
+    if alerta_update.estado == "investigada" and alerta.reconocida_en is None:
+        alerta.reconocida_en = datetime.utcnow()
+    if alerta_update.estado == "resuelta" and alerta.resuelto_en is None:
         alerta.resuelto_en = datetime.utcnow()
     
     db.commit()

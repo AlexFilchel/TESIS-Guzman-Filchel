@@ -37,10 +37,10 @@ export default function AlertsChart({ data, title = "Tendencia de Alertas" }) {
               labelStyle={{ color: '#9ca3af' }}
             />
             <Legend />
-            <Line type="monotone" dataKey="critical" stroke={severityColors.critical} strokeWidth={2} dot={{ fill: severityColors.critical }} name="Critical" />
-            <Line type="monotone" dataKey="high" stroke={severityColors.high} strokeWidth={2} dot={{ fill: severityColors.high }} name="High" />
-            <Line type="monotone" dataKey="medium" stroke={severityColors.medium} strokeWidth={2} dot={{ fill: severityColors.medium }} name="Medium" />
-            <Line type="monotone" dataKey="low" stroke={severityColors.low} strokeWidth={2} dot={{ fill: severityColors.low }} name="Low" />
+            <Line type="monotone" dataKey="critical" stroke={severityColors.critical} strokeWidth={2} dot={{ fill: severityColors.critical }} name="Crítica" />
+            <Line type="monotone" dataKey="high" stroke={severityColors.high} strokeWidth={2} dot={{ fill: severityColors.high }} name="Alta" />
+            <Line type="monotone" dataKey="medium" stroke={severityColors.medium} strokeWidth={2} dot={{ fill: severityColors.medium }} name="Media" />
+            <Line type="monotone" dataKey="low" stroke={severityColors.low} strokeWidth={2} dot={{ fill: severityColors.low }} name="Baja" />
           </LineChart>
         </ResponsiveContainer>
       )}

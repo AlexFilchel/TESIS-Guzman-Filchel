@@ -5,12 +5,14 @@ import SeverityPieChart from '../components/SeverityPieChart';
 import AlertaCard from '../components/AlertaCard';
 import AlertaModal from '../components/AlertaModal';
 import AlertToast from '../components/AlertToast';
-import { getMetrics, getTimeline, getAlertas, updateAlerta } from '../services/api';
+import TiemposOperativos from '../components/TiemposOperativos';
+import { getMetrics, getTimeline, getAlertas, updateAlerta, getTiempos } from '../services/api';
 import { useWebSocket } from '../hooks/useWebSocket';
 
 export default function Dashboard() {
   const [metrics, setMetrics] = useState(null);
   const [timeline, setTimeline] = useState([]);
+  const [tiempos, setTiempos] = useState(null);
   const [recientes, setRecientes] = useState([]);
   const [alertaSeleccionada, setAlertaSeleccionada] = useState(null);
   const [toast, setToast] = useState(null);
@@ -20,14 +22,16 @@ export default function Dashboard() {
 
   const loadData = useCallback(async () => {
     try {
-      const [metricsRes, timelineRes, alertasRes] = await Promise.all([
+      const [metricsRes, timelineRes, alertasRes, tiemposRes] = await Promise.all([
         getMetrics(),
         getTimeline(7),
-        getAlertas({ limit: 5 })
+        getAlertas({ limit: 5 }),
+        getTiempos()
       ]);
       setMetrics(metricsRes.data);
       setTimeline(timelineRes.data);
       setRecientes(alertasRes.data);
+      setTiempos(tiemposRes.data);
     } catch (error) {
       console.error('Error cargando datos:', error);
     } finally {
@@ -89,27 +93,30 @@ export default function Dashboard() {
           value={metrics?.total || 0} 
           color="blue" 
         />
-        <StatsCard 
-          title="Critical" 
-          value={porSeveridad.critical} 
-          color="red" 
+        <StatsCard
+          title="Crítica"
+          value={porSeveridad.critical}
+          color="red"
         />
-        <StatsCard 
-          title="High" 
-          value={porSeveridad.high} 
-          color="orange" 
+        <StatsCard
+          title="Alta"
+          value={porSeveridad.high}
+          color="orange"
         />
-        <StatsCard 
-          title="Medium" 
-          value={porSeveridad.medium} 
-          color="yellow" 
+        <StatsCard
+          title="Media"
+          value={porSeveridad.medium}
+          color="yellow"
         />
-        <StatsCard 
-          title="Low" 
-          value={porSeveridad.low} 
+        <StatsCard
+          title="Baja"
+          value={porSeveridad.low}
           color="green" 
         />
       </div>
+
+      {/* Tiempos operativos (MTTD/MTTA/MTTR) */}
+      <TiemposOperativos tiempos={tiempos} />
 
       {/* Gráficos */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

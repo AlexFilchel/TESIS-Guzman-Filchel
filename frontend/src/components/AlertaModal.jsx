@@ -1,3 +1,5 @@
+import { traducirSeveridad, traducirCategoria } from '../utils/labels';
+
 export default function AlertaModal({ alerta, onClose, onActualizar }) {
   if (!alerta) return null;
 
@@ -22,7 +24,7 @@ export default function AlertaModal({ alerta, onClose, onActualizar }) {
           <div>
             <h2 className="text-xl font-bold">Alerta #{alerta.id}</h2>
             <span className={`inline-block px-2 py-1 rounded text-xs font-bold uppercase ${config.bg} ${config.border}`}>
-              {alerta.severidad}
+              {traducirSeveridad(alerta.severidad)}
             </span>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white text-2xl">✕</button>
@@ -32,7 +34,7 @@ export default function AlertaModal({ alerta, onClose, onActualizar }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-gray-400 text-sm">Categoría</p>
-              <p className="font-semibold">{alerta.categoria.replace('_', ' ')}</p>
+              <p className="font-semibold">{traducirCategoria(alerta.categoria)}</p>
             </div>
             <div>
               <p className="text-gray-400 text-sm">Estado</p>
@@ -58,17 +60,41 @@ export default function AlertaModal({ alerta, onClose, onActualizar }) {
               <p className="text-gray-400 text-sm">Cantidad Eventos</p>
               <p className="font-bold">{alerta.cantidad_eventos}</p>
             </div>
-            <div>
-              <p className="text-gray-400 text-sm">Fecha</p>
-              <p>{new Date(alerta.fecha).toLocaleString()}</p>
+          </div>
+
+          <div>
+            <p className="text-gray-400 text-sm mb-2">Ciclo de vida de la alerta</p>
+            <div className="grid grid-cols-2 gap-3 bg-gray-900 rounded p-3">
+              <div>
+                <p className="text-gray-500 text-xs">Evento generado</p>
+                <p className="text-sm">
+                  {alerta.evento_generado_en ? new Date(alerta.evento_generado_en).toLocaleString() : 'Sin registrar'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs">Alerta creada</p>
+                <p className="text-sm">{new Date(alerta.fecha).toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs">Reconocida</p>
+                <p className="text-sm">
+                  {alerta.reconocida_en ? new Date(alerta.reconocida_en).toLocaleString() : 'Pendiente'}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs">Resuelta</p>
+                <p className="text-sm">
+                  {alerta.resuelto_en ? new Date(alerta.resuelto_en).toLocaleString() : 'Pendiente'}
+                </p>
+              </div>
             </div>
           </div>
-          
+
           <div>
             <p className="text-gray-400 text-sm">Descripción</p>
             <p>{alerta.descripcion}</p>
           </div>
-          
+
           {alerta.log_crudo && (
             <div>
               <p className="text-gray-400 text-sm mb-2">Log Crudo</p>

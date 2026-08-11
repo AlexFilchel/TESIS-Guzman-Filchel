@@ -1,6 +1,8 @@
 CREATE TABLE IF NOT EXISTS alertas (
    id SERIAL PRIMARY KEY,
+   evento_generado_en TIMESTAMP,
    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   reconocida_en TIMESTAMP,
    severidad VARCHAR(20) NOT NULL,
    categoria VARCHAR(50) NOT NULL,
    ip_origen VARCHAR(50),
@@ -45,6 +47,8 @@ CREATE INDEX IF NOT EXISTS idx_alertas_ip ON alertas(ip_origen);
 INSERT INTO reglas_deteccion (nombre, descripcion, patron, severidad, umbral, ventana_tiempo)
 VALUES
 ('Fuerza bruta SSH', 'Detecta múltiples intentos fallidos de SSH', 'Failed password', 'high', 6, 300),
+('Consulta masiva SID', 'Detecta consultas masivas al servicio SID con número de documento', 'Query SID: DNI=', 'critical', 10, 300),
+('Explotación web Apache Struts', 'Detecta invocación de runtime.exec en encabezados de peticiones web', 'runtime.exec', 'critical', 1, 300),
 ('Intento login root', 'Detecta intento de autenticación como root', 'Failed password for root', 'critical', 1, 60),
 ('Uso sospechoso de sudo', 'Detecta múltiples ejecuciones de sudo', 'sudo', 'medium', 10, 600),
 ('Escaneo puertos', 'Detecta múltiples paquetes bloqueados por firewall', 'DROP|UFW BLOCK|iptables', 'medium', 5, 300),

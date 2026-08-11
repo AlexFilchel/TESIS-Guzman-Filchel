@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getReglas, toggleRegla } from '../services/api';
+import { traducirSeveridad } from '../utils/labels';
 
 const SEVERITY_STYLES = {
   critical: 'bg-red-900/40 text-red-400 border border-red-800',
@@ -91,7 +92,7 @@ export default function Reglas() {
                         SEVERITY_STYLES[regla.severidad] || 'bg-gray-700 text-gray-300'
                       }`}
                     >
-                      {regla.severidad}
+                      {traducirSeveridad(regla.severidad)}
                     </span>
                   </td>
                   <td className="px-4 py-4 text-center text-gray-300">

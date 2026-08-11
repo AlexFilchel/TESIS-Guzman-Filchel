@@ -1,8 +1,8 @@
 export default function LogControl({ onTrigger, loading }) {
   const niveles = [
-    { id: 'info', label: 'Info', color: 'bg-blue-600 hover:bg-blue-500' },
-    { id: 'warning', label: 'Warning', color: 'bg-yellow-600 hover:bg-yellow-500' },
-    { id: 'critical_event', label: 'Critical', color: 'bg-red-600 hover:bg-red-500' },
+    { id: 'info', label: 'Informativo', color: 'bg-blue-600 hover:bg-blue-500' },
+    { id: 'warning', label: 'Advertencia', color: 'bg-yellow-600 hover:bg-yellow-500' },
+    { id: 'critical_event', label: 'Crítico', color: 'bg-red-600 hover:bg-red-500' },
   ];
 
   return (

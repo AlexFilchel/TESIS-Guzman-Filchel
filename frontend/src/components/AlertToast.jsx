@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { traducirSeveridad, traducirCategoria } from '../utils/labels';
 
 const severidadConfig = {
   critical: { bg: 'bg-red-600', text: 'text-white', icon: '🚨' },
@@ -38,7 +39,7 @@ export default function AlertToast({ alerta, onClose }) {
             <span className="text-2xl">{config.icon}</span>
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <h4 className="font-bold uppercase text-sm">{alerta.severidad}</h4>
+                <h4 className="font-bold uppercase text-sm">{traducirSeveridad(alerta.severidad)}</h4>
                 <button 
                   onClick={() => {
                     setVisible(false);
@@ -49,7 +50,7 @@ export default function AlertToast({ alerta, onClose }) {
                   ✕
                 </button>
               </div>
-              <p className="font-semibold mt-1">{alerta.categoria.replace('_', ' ')}</p>
+              <p className="font-semibold mt-1">{traducirCategoria(alerta.categoria)}</p>
               <p className="text-sm text-white/80 mt-1">{alerta.descripcion}</p>
               <div className="flex gap-4 mt-2 text-xs text-white/70">
                 <span>IP: {alerta.ip_origen || 'N/A'}</span>
