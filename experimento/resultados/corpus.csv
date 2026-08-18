@@ -1,0 +1,17 @@
+id,nombre,etiqueta,regla_asociada,resultado_esperado,eventos,detectado,reglas_disparadas,entidades,resultado,coincide_con_lo_esperado
+BEN-01,Usuario legitimo que equivoca la contrasena,benigno,Fuerza bruta SSH,verdadero_negativo,4,no,,,verdadero_negativo,si
+BEN-02,Sesion administrativa root autorizada desde la red de gestion,benigno,Intento login root,verdadero_negativo,3,no,,,verdadero_negativo,si
+BEN-03,Mantenimiento programado con elevacion de privilegios autorizada,benigno,Uso sospechoso de sudo,verdadero_negativo,6,no,,,verdadero_negativo,si
+BEN-04,Sondeo de disponibilidad del sistema de monitoreo,benigno,Escaneo puertos,verdadero_negativo,4,no,,,verdadero_negativo,si
+BEN-05,Uso legitimo del portal administrativo por un operador,benigno,Escaneo directorios web,falso_positivo,9,si,Escaneo directorios web,192.168.10.44,falso_positivo,si
+BEN-06,Consulta al SID por ventanilla dentro del uso previsto,benigno,Consulta masiva SID,verdadero_negativo,6,no,,,verdadero_negativo,si
+BEN-07,Despliegue autorizado de la aplicacion Java,benigno,Explotación web Apache Struts,verdadero_negativo,6,no,,,verdadero_negativo,si
+BEN-08,Operacion normal del sistema sin correspondencia con ninguna regla (control),benigno,,verdadero_negativo,6,no,,,verdadero_negativo,si
+MAL-01,Fuerza bruta SSH sostenida contra una cuenta de servicio,malicioso,Fuerza bruta SSH,verdadero_positivo,9,si,Fuerza bruta SSH,203.0.113.45,verdadero_positivo,si
+MAL-02,Intento de autenticacion como root desde el exterior,malicioso,Intento login root,verdadero_positivo,3,si,Intento login root,198.51.100.23,verdadero_positivo,si
+MAL-03,Abuso de sudo desde una cuenta de servicio comprometida,malicioso,Uso sospechoso de sudo,verdadero_positivo,14,si,Uso sospechoso de sudo,sin_origen,verdadero_positivo,si
+MAL-04,Escaneo de puertos desde un host externo,malicioso,Escaneo puertos,verdadero_positivo,30,si,Escaneo puertos,192.0.2.77,verdadero_positivo,si
+MAL-05,Enumeracion automatizada de rutas sensibles del servidor web,malicioso,Escaneo directorios web,verdadero_positivo,15,si,Escaneo directorios web,192.0.2.140,verdadero_positivo,si
+MAL-06,Consulta masiva al servicio SID (caso RENAPER),malicioso,Consulta masiva SID,verdadero_positivo,40,si,Consulta masiva SID,10.20.30.40,verdadero_positivo,si
+MAL-07,Explotacion de Apache Struts CVE-2017-5638 (caso Equifax),malicioso,Explotación web Apache Struts,verdadero_positivo,1,si,Explotación web Apache Struts,203.0.113.99,verdadero_positivo,si
+MAL-08,Consulta masiva al SID distribuida entre varias credenciales,malicioso,Consulta masiva SID,falso_negativo,27,no,,,falso_negativo,si

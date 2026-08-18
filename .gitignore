@@ -4,7 +4,6 @@ data/
 backup_origen/
 postgres_data/
 elastic_data/
-grafana_data/
 
 # ====== CERTIFICADOS Y SECRETOS ======
 certs/
@@ -17,7 +16,20 @@ certs/
 # ====== LOGS ======
 *.log
 logs/
-*.txt
+
+# La regla generica "*.txt" hizo perder backend/requirements.txt del control de
+# versiones y dejo el repositorio sin poder construirse desde un clon limpio.
+# Se acota a los volcados de texto de runtime y se declaran excepciones explicitas
+# para todo el material que si tiene que estar publicado.
+data/**/*.txt
+logs/**/*.txt
+!backend/requirements.txt
+!**/requirements*.txt
+
+# ====== MATERIAL DEL EXPERIMENTO (debe versionarse) ======
+!experimento/**
+!experimento/fixtures/**
+!experimento/resultados/**
 
 # ====== VARIABLES DE ENTORNO Y CREDENCIALES ======
 .env
@@ -77,3 +89,6 @@ build/
 .github/prompts/
 .github/skills/
 openspec/
+
+# ====== MATERIAL DE TRABAJO (no forma parte del repositorio) ======
+cambios_repositorio.md

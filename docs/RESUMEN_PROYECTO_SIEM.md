@@ -19,14 +19,14 @@ Es un **SIEM (Security Information and Event Management)** educativo que simula 
 │                   BACKEND (FastAPI - Python)                │
 │                   Puerto: 8000                               │
 │    API REST + WebSocket para alertas en tiempo real          │
-└───────┬─────────────────────┬───────────────────┬────────────┘
-        │                     │                   │
-┌───────▼───────┐   ┌─────────▼─────────┐  ┌──────▼──────────┐
-│  PostgreSQL   │   │   Elasticsearch   │  │    Grafana     │
-│  Puerto: 5432 │   │   Puerto: 9200   │  │   Puerto: 3001  │
-│  - Alertas    │   │  - Logs indexados │  │  - Dashboards   │
-│  - Usuarios   │   │  - Búsqueda       │  │  - Métricas     │
-│  - Reglas     │   └───────────────────┘  └─────────────────┘
+└───────┬─────────────────────┬────────────────────────────────┘
+        │                     │
+┌───────▼───────┐   ┌─────────▼─────────┐
+│  PostgreSQL   │   │   Elasticsearch   │
+│  Puerto: 5432 │   │   Puerto: 9200    │
+│  - Alertas    │   │  - Logs indexados │
+│  - Usuarios   │   │  - Búsqueda       │
+│  - Reglas     │   └───────────────────┘
 └───────────────┘
         ▲
         │ Recolecta logs
@@ -76,7 +76,6 @@ Es un **SIEM (Security Information and Event Management)** educativo que simula 
 | **Elasticsearch** | Motor de búsqueda/indexación de logs |
 | **Logstash** | Pipeline de procesamiento de logs |
 | **Syslog-ng** | Recolector centralizado de logs |
-| **Grafana** | Visualización de métricas |
 | **N8N** | Automatización de workflows (flujos de análisis) |
 
 ---
@@ -202,7 +201,6 @@ docker-compose logs -f backend
 # Acceder a:
 # - Frontend:       http://localhost:3000
 # - Backend API:    http://localhost:8000
-# - Grafana:        http://localhost:3001
 # - N8N:            http://localhost:5678
 # - Elasticsearch:  http://localhost:9200
 ```

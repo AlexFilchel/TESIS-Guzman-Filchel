@@ -1,0 +1,63 @@
+{
+  "descripcion": "Los tres escenarios de las mediciones temporales del apartado 6.4. Cada uno se ejecuta diez veces, lo que da las treinta alertas medidas. A diferencia de los escenarios del corpus, que sirven para medir calidad de deteccion y por eso se resuelven de forma instantanea, estos escenarios estan pensados para medir tiempo: el ritmo de emision es parte de lo que se mide.",
+  "nota_sobre_el_ritmo_de_emision": "El campo intervalo_s de cada escenario es el tiempo entre eventos consecutivos de la secuencia atacante y se deriva de los propios valores publicados en el informe. El MTTD medio de la explotacion web (umbral 1, sin acumulacion) es 9,10 s; el de la fuerza bruta SSH (umbral 6, cinco intervalos de acumulacion) es 12,10 s, tres segundos mas, lo que da 0,6 s por intervalo; el de la consulta masiva (umbral 10, nueve intervalos) es 31,80 s, veintidos con setenta mas, lo que da 2,52 s por intervalo. Son propiedades del ataque simulado, no parametros del sistema de deteccion: el sistema no los conoce.",
+  "escenarios": [
+    {
+      "id": "MED-RENAPER",
+      "nombre": "Consulta masiva al servicio SID (caso RENAPER)",
+      "categoria_medida": "Consulta masiva (RENAPER)",
+      "regla": "Consulta masiva SID",
+      "umbral_esperado": 10,
+      "host": "sid-server",
+      "archivo": "syslog",
+      "proceso": "sid",
+      "bloques": [
+        {
+          "plantilla": "Query SID: DNI=30<<N6>>, Sexo=F, User=usr_salud_001 from <<IP>>",
+          "ip": "10.20.30.40",
+          "repeticiones": 12,
+          "intervalo_s": 2.52,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MED-SSH",
+      "nombre": "Fuerza bruta SSH sostenida",
+      "categoria_medida": "Fuerza bruta SSH",
+      "regla": "Fuerza bruta SSH",
+      "umbral_esperado": 6,
+      "host": "server1",
+      "archivo": "auth",
+      "proceso": "sshd",
+      "bloques": [
+        {
+          "plantilla": "Failed password for deploy from <<IP>> port <<PUERTO>> ssh2",
+          "ip": "203.0.113.45",
+          "repeticiones": 8,
+          "intervalo_s": 0.6,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MED-EQUIFAX",
+      "nombre": "Explotacion de Apache Struts CVE-2017-5638 (caso Equifax)",
+      "categoria_medida": "Explotacion web (Equifax)",
+      "regla": "Explotación web Apache Struts",
+      "umbral_esperado": 1,
+      "host": "web01",
+      "archivo": "syslog",
+      "proceso": "nginx",
+      "bloques": [
+        {
+          "plantilla": "<<IP>> - - \"GET /struts2-showcase/index.action HTTP/1.1\" 200 X-Handler: ${${runtime.exec(\"whoami\")}}",
+          "ip": "203.0.113.99",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 0.0
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,263 @@
+{
+  "name": "SIEM - Deteccion de alertas",
+  "nodes": [
+    {
+      "id": "cronometro-5-min",
+      "name": "Cronómetro 5 min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -320,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "notes": "Disparador temporal del ciclo de deteccion: un barrido cada cinco minutos."
+    },
+    {
+      "id": "get-rules",
+      "name": "GetRules",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        -100,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM reglas_deteccion WHERE habilitada = true;",
+        "options": {}
+      },
+      "credentials": {
+        "postgres": {
+          "name": "PostgreSQL SIEM (configurar al importar)"
+        }
+      },
+      "notes": "Reglas activas. `Apply rules` las recupera con $('GetRules')."
+    },
+    {
+      "id": "read-logs",
+      "name": "Read Logs",
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        120,
+        0
+      ],
+      "parameters": {
+        "fileSelector": "/var/log/remotos/**/*.log",
+        "options": {}
+      },
+      "notes": "Lee los archivos del volumen compartido con syslog-ng y Logstash. El acceso esta acotado por N8N_RESTRICT_FILE_ACCESS_TO."
+    },
+    {
+      "id": "extract-from-file",
+      "name": "Extract from File",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        340,
+        0
+      ],
+      "parameters": {
+        "operation": "text",
+        "destinationKey": "data",
+        "options": {}
+      },
+      "notes": "Vuelca el contenido binario del archivo al campo json.data, que es el que lee `Parse Logs`."
+    },
+    {
+      "id": "parse-logs",
+      "name": "Parse Logs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst events = [];\nconst MESES = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,\n                Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };\n\n// Extrae la marca temporal del propio registro.\n// Devuelve null si la línea no contiene un formato reconocible.\nfunction extraerMarcaTemporal(linea) {\n  // Formato ISO 8601: 2026-08-11T13:24:05.123Z\n  const iso = linea.match(/\\b\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?/);\n  if (iso) {\n    const d = new Date(iso[0]);\n    if (!isNaN(d.getTime())) return d;\n  }\n  // Formato syslog RFC 3164: \"Aug 11 13:24:05\" (sin año ni huso horario)\n  const rfc = linea.match(/^([A-Z][a-z]{2})\\s+(\\d{1,2})\\s+(\\d{2}):(\\d{2}):(\\d{2})/);\n  if (rfc && MESES[rfc[1]] !== undefined) {\n    const ahora = new Date();\n    const d = new Date(\n      ahora.getFullYear(), MESES[rfc[1]], Number(rfc[2]),\n      Number(rfc[3]), Number(rfc[4]), Number(rfc[5])\n    );\n    // Si la fecha resultante queda en el futuro, corresponde al año anterior.\n    if (d.getTime() > ahora.getTime() + 86400000) {\n      d.setFullYear(ahora.getFullYear() - 1);\n    }\n    if (!isNaN(d.getTime())) return d;\n  }\n  return null;\n}\n\nfor (const item of items) {\n  const text = item.json.data;\n  if (!text) continue;\n\n  const lines = text.split('\\n');\n\n  for (const line of lines) {\n    if (!line.trim()) continue;\n\n    const ipMatch = line.match(/\\b(\\d{1,3}(?:\\.\\d{1,3}){3})\\b/);\n    const ingestedAt = new Date();\n    const marcaLog = extraerMarcaTemporal(line);\n\n    events.push({\n      raw: line,\n      source_ip: ipMatch ? ipMatch[1] : null,\n      category: line.includes('Failed password') ? 'authentication_failure' : 'general',\n      event_time: (marcaLog || ingestedAt).toISOString(),\n      event_time_source: marcaLog ? 'log' : 'ingesta',\n      ingested_at: ingestedAt.toISOString()\n    });\n  }\n}\n\nreturn events.map(e => ({ json: e }));"
+      },
+      "notes": "Normalizacion a eventos estructurados. La marca RFC 3164 se interpreta como hora local del emisor, que es lo que el protocolo transporta."
+    },
+    {
+      "id": "apply-rules",
+      "name": "Apply rules",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        0
+      ],
+      "parameters": {
+        "jsCode": "const logs  = $input.all().map(i => i.json);\nconst rules = $('GetRules').all().map(i => i.json);\nconst alerts = [];\nconst ahora = Date.now();\n\nfor (const rule of rules) {\n  const re = new RegExp(rule.patron, 'i');\n  const ventanaMs = (rule.ventana_tiempo || 300) * 1000;\n\n  // 1. Sólo los eventos comprendidos en la ventana temporal de la regla.\n  const enVentana = logs.filter(l => {\n    if (!re.test(l.raw || '')) return false;\n    const t = Date.parse(l.event_time);\n    return !isNaN(t) && (ahora - t) <= ventanaMs;\n  });\n\n  // 2. El umbral se evalúa por entidad, no sobre el lote completo.\n  const porEntidad = new Map();\n  for (const ev of enVentana) {\n    const clave = ev.source_ip || 'sin_origen';\n    if (!porEntidad.has(clave)) porEntidad.set(clave, []);\n    porEntidad.get(clave).push(ev);\n  }\n\n  for (const [entidad, eventos] of porEntidad) {\n    if (eventos.length >= rule.umbral) {\n      alerts.push({\n        fecha: new Date().toISOString(),\n        severidad: rule.severidad || 'media',\n        categoria: rule.nombre,\n        ip_origen: entidad === 'sin_origen' ? null : entidad,\n        host_objetivo: 'docker-siem',\n        cantidad_eventos: eventos.length,\n        descripcion: `Regla ${rule.nombre} activada para ${entidad}`,\n        log_crudo: eventos[0].raw || ''\n      });\n    }\n  }\n}\n\nreturn alerts.map(a => ({ json: a }));"
+      },
+      "notes": "Correlacion. El umbral se evalua dentro de la ventana temporal de la regla y por entidad de origen."
+    },
+    {
+      "id": "store-alerts",
+      "name": "Store alerts",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.4,
+      "position": [
+        1000,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO alertas (\n  fecha,\n  severidad,\n  categoria,\n  ip_origen,\n  host_objetivo,\n  cantidad_eventos,\n  descripcion,\n  log_crudo,\n  estado\n) VALUES ($1, $2, $3, $4::inet, $5, $6, $7, $8, $9);",
+        "options": {
+          "queryReplacement": "={{$json.fecha}}, {{$json.severidad}}, {{$json.categoria}}, {{$json.ip_origen}}, {{$json.host_objetivo}}, {{$json.cantidad_eventos}}, {{$json.descripcion}}, {{$json.log_crudo}}, nueva"
+        }
+      },
+      "credentials": {
+        "postgres": {
+          "name": "PostgreSQL SIEM (configurar al importar)"
+        }
+      },
+      "notes": "Sentencia parametrizada. log_crudo transporta contenido bajo control potencial de un atacante: interpolarlo en el texto SQL seria una inyeccion."
+    },
+    {
+      "id": "es-alerta-nueva",
+      "name": "Es alerta nueva?",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1220,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// Deduplicacion previa a la notificacion.\n//\n// La persistencia ya ocurrio en `Store alerts`: lo que se filtra aca es\n// unicamente el aviso por correo. Sin este paso una condicion sostenida\n// --un escaneo que dura media hora, por ejemplo-- genera una notificacion\n// por cada ciclo de cinco minutos, y el destinatario deja de leerlas.\n//\n// La identidad de una deteccion es el par (categoria de la regla, entidad de\n// origen). Se deja pasar solo si ese par no fue notificado dentro de la\n// ventana de silencio.\n\nconst VENTANA_SILENCIO_MS = 60 * 60 * 1000;   // una hora\n\nconst registro = $getWorkflowStaticData('global');\nif (!registro.notificadas) registro.notificadas = {};\n\nconst ahora = Date.now();\nconst nuevas = [];\n\n// Purga de entradas vencidas, para que el registro no crezca sin limite.\nfor (const [clave, momento] of Object.entries(registro.notificadas)) {\n  if (ahora - momento > VENTANA_SILENCIO_MS) delete registro.notificadas[clave];\n}\n\nfor (const item of $input.all()) {\n  const alerta = item.json;\n  const clave = `${alerta.categoria}::${alerta.ip_origen || 'sin_origen'}`;\n  const ultima = registro.notificadas[clave];\n\n  if (ultima === undefined || (ahora - ultima) > VENTANA_SILENCIO_MS) {\n    registro.notificadas[clave] = ahora;\n    nuevas.push({ json: alerta });\n  }\n}\n\nreturn nuevas;"
+      },
+      "notes": "Deduplicacion previa a la notificacion, por categoria de regla y entidad de origen. La persistencia ya ocurrio en el nodo anterior."
+    },
+    {
+      "id": "send-an-email",
+      "name": "Send an Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1440,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "",
+        "toEmail": "",
+        "subject": "=[SIEM] {{$json.severidad}} - {{$json.categoria}}",
+        "emailFormat": "html",
+        "html": "=<h2>Alerta de seguridad - {{$json.categoria}}</h2><p><b>Severidad:</b> {{$json.severidad}}</p><p><b>Origen:</b> {{$json.ip_origen || 'sin origen'}}</p><p><b>Host objetivo:</b> {{$json.host_objetivo}}</p><p><b>Eventos correlacionados:</b> {{$json.cantidad_eventos}}</p><p><b>Detectada:</b> {{$json.fecha}}</p><p>{{$json.descripcion}}</p><pre>{{$json.log_crudo}}</pre>",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "name": "SMTP SIEM (configurar al importar)"
+        }
+      },
+      "notes": "Remitente y destinatario quedan vacios a proposito: se completan al importar. Las credenciales SMTP no se versionan."
+    }
+  ],
+  "connections": {
+    "Cronómetro 5 min": {
+      "main": [
+        [
+          {
+            "node": "GetRules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetRules": {
+      "main": [
+        [
+          {
+            "node": "Read Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Logs": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Parse Logs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Logs": {
+      "main": [
+        [
+          {
+            "node": "Apply rules",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply rules": {
+      "main": [
+        [
+          {
+            "node": "Store alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store alerts": {
+      "main": [
+        [
+          {
+            "node": "Es alerta nueva?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Es alerta nueva?": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "tags": []
+}

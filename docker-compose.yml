@@ -111,20 +111,6 @@ services:
     networks:
       - siem-net
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: siem_grafana
-    depends_on:
-      - postgres
-      - elasticsearch
-    ports:
-      - "3001:3000"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana/provisioning:/etc/grafana/provisioning
-    networks:
-      - siem-net
-
   backend:
     build: ./backend
     container_name: siem_backend
@@ -162,4 +148,3 @@ volumes:
   postgres_data:
   elastic_data:
   n8n_data:
-  grafana_data:

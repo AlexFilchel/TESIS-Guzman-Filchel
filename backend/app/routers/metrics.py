@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timedelta
+from typing import List, Optional
 from statistics import mean, median, pstdev
 
 from app.database import get_db
@@ -14,6 +15,14 @@ def _segundos(desde, hasta):
     if desde is None or hasta is None:
         return None
     return (hasta - desde).total_seconds()
+
+
+# Estimador de desviacion estandar. `pstdev` es el poblacional: se toman las
+# ejecuciones medidas como la poblacion completa del experimento, no como una
+# muestra de una poblacion mayor. experimento/calcular_metricas.py usa este
+# mismo estimador, para que el dashboard y el informe no publiquen desvios
+# distintos sobre los mismos datos.
+ESTIMADOR_DESVIO = "poblacional (statistics.pstdev)"
 
 
 def _resumen(valores):
@@ -100,8 +109,43 @@ async def get_by_category(db: Session = Depends(get_db)):
     return [{"categoria": r.categoria, "cantidad": r.cantidad} for r in resultados]
 
 @router.get("/tiempos")
-async def get_tiempos(db: Session = Depends(get_db)):
-    alertas = db.query(Alerta).all()
+async def get_tiempos(
+    desde: Optional[datetime] = Query(
+        None, description="Limite inferior de `fecha` (ISO 8601), inclusive"),
+    hasta: Optional[datetime] = Query(
+        None, description="Limite superior de `fecha` (ISO 8601), inclusive"),
+    categorias: Optional[List[str]] = Query(
+        None, description="Categorias a incluir. Repetible: ?categorias=a&categorias=b"),
+    ids: Optional[List[int]] = Query(
+        None, description="IDs de alerta concretos. Repetible: ?ids=1&ids=2"),
+    db: Session = Depends(get_db)
+):
+    """MTTD, MTTA y MTTR sobre el subconjunto de alertas seleccionado.
+
+    Sin parametros calcula sobre toda la base, que es el comportamiento
+    historico. Los filtros existen para poder acotar el calculo al conjunto
+    medido de un experimento --por ejemplo las treinta alertas del Capitulo
+    6-- en lugar de mezclarlo con el acumulado del laboratorio.
+
+    Definiciones, fijadas por el apartado 6.2 del informe:
+
+    * MTTD = fecha - evento_generado_en
+    * MTTA = reconocida_en - fecha
+    * MTTR = resuelto_en - fecha  (desde la creacion, NO desde el
+      reconocimiento; por lo tanto el MTTR reportado contiene al MTTA)
+    """
+    query = db.query(Alerta)
+
+    if desde is not None:
+        query = query.filter(Alerta.fecha >= desde)
+    if hasta is not None:
+        query = query.filter(Alerta.fecha <= hasta)
+    if categorias:
+        query = query.filter(Alerta.categoria.in_(categorias))
+    if ids:
+        query = query.filter(Alerta.id.in_(ids))
+
+    alertas = query.order_by(Alerta.fecha.asc()).all()
 
     mttd, mtta, mttr = [], [], []
     por_categoria = {}
@@ -120,6 +164,14 @@ async def get_tiempos(db: Session = Depends(get_db)):
         cat["mttr"].append(r)
 
     return {
+        "filtro": {
+            "desde": desde,
+            "hasta": hasta,
+            "categorias": categorias,
+            "ids": ids,
+            "alertas_consideradas": len(alertas)
+        },
+        "estimador_desvio": ESTIMADOR_DESVIO,
         "global": {
             "mttd": _resumen(mttd),
             "mtta": _resumen(mtta),

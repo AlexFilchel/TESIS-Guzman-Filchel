@@ -361,7 +361,6 @@ networks:
 | Backend FastAPI | - | - | 8000 |
 | Frontend React | - | - | 3000 |
 | n8n | admin | admin123 | 5678 |
-| Grafana | admin | admin | 3001 |
 
 ---
 

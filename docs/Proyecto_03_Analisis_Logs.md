@@ -23,7 +23,6 @@ Al completar este proyecto, los estudiantes serán capaces de:
 - **N8N**: Orquestación de flujos de análisis
 - **Elasticsearch** o **Splunk**: Indexación y búsqueda de logs (opcional pero recomendado)
 - **Syslog-ng** o **Fluentd**: Recolección centralizada de logs
-- **Grafana**: Visualización de métricas (opcional)
 - **PostgreSQL**: Almacenamiento de alertas y eventos
 
 ### Herramientas de Análisis
@@ -57,12 +56,12 @@ Al completar este proyecto, los estudiantes serán capaces de:
 │   ┌─────▼──────┐                      ┌───────▼────┐ │
 │   │Elasticsearch│                      │     N8N    │ │
 │   │  (Storage)  │◀────────────────────│  (Analysis)│ │
-│   └─────┬───────┘                      └───────┬────┘ │
-│         │                                      │      │
-│   ┌─────▼──────┐                      ┌───────▼────┐ │
-│   │  Grafana   │                      │PostgreSQL  │ │
-│   │(Dashboard) │                      │  (Alerts)  │ │
-│   └────────────┘                      └────────────┘ │
+│   └─────────────┘                      └───────┬────┘ │
+│                                                │      │
+│                                        ┌───────▼────┐ │
+│                                        │PostgreSQL  │ │
+│                                        │  (Alerts)  │ │
+│                                        └────────────┘ │
 └────────────────────────────────────────────────────────┘
 ```
 
@@ -1086,7 +1085,7 @@ ORDER BY alerts_after_block DESC;
 
 ### Ejercicio 3: Análisis Avanzado (5 horas)
 1. Integrar Elasticsearch y Logstash
-2. Crear visualizaciones en Grafana/Kibana
+2. Crear visualizaciones en Kibana
 3. Implementar enriquecimiento con threat intelligence
 
 ### Ejercicio 4: Respuesta Automatizada (4 horas)

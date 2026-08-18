@@ -12,17 +12,30 @@ function MetricaCard({ titulo, resumen }) {
       <p className="text-gray-500 text-xs mt-1">
         {resumen ? `mediana ${formatSegundos(resumen.mediana)} · n=${resumen.n}` : 'Sin datos aún'}
       </p>
+      {/* Mínimo, máximo y desvío son los descriptores que el Capítulo 6 reporta
+          junto con la media: sin ellos la tarjeta no alcanza para la captura. */}
+      {resumen && (
+        <p className="text-gray-500 text-xs">
+          {`mín ${formatSegundos(resumen.min)} · máx ${formatSegundos(resumen.max)} · σ ${formatSegundos(resumen.desvio)}`}
+        </p>
+      )}
     </div>
   );
 }
 
 export default function TiemposOperativos({ tiempos }) {
   const global = tiempos?.global;
+  const filtro = tiempos?.filtro;
 
   return (
     <div>
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-xl font-semibold">Tiempos de Detección y Respuesta</h2>
+        {filtro && (
+          <span className="text-gray-500 text-xs">
+            {`${filtro.alertas_consideradas} alertas consideradas`}
+          </span>
+        )}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <MetricaCard titulo="MTTD (detección)" resumen={global?.mttd} />

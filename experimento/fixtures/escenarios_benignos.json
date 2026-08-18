@@ -1,0 +1,223 @@
+{
+  "descripcion": "Ocho escenarios etiquetados como benignos del corpus del apartado 6.5.1. El conjunto se construyo con un criterio explicito: un escenario de actividad legitima por cada una de las siete reglas evaluadas --capaz de producir eventos del mismo tipo que la regla examina, pero originados en operacion autorizada-- mas un octavo de operacion normal sin correspondencia con ninguna regla, incorporado como control. Sin ese criterio el conjunto benigno seria trivial de clasificar y no diria nada sobre la calidad de la deteccion.",
+  "etiqueta": "benigno",
+  "tokens": {
+    "<<N>>": "indice del evento dentro del bloque, base 1",
+    "<<N6>>": "el mismo indice, rellenado con ceros a seis digitos",
+    "<<IP>>": "el campo ip del bloque",
+    "<<PUERTO>>": "40000 + indice, para variar el puerto de origen",
+    "<<VALOR>>": "recorre ciclicamente la lista valores del bloque"
+  },
+  "escenarios": [
+    {
+      "id": "BEN-01",
+      "nombre": "Usuario legitimo que equivoca la contrasena",
+      "etiqueta": "benigno",
+      "regla_asociada": "Fuerza bruta SSH",
+      "resultado_esperado": "verdadero_negativo",
+      "justificacion": "Produce exactamente el mismo tipo de evento que la regla de fuerza bruta evalua --autenticaciones fallidas-- pero tres intentos quedan por debajo del umbral de seis, y la secuencia termina en una autenticacion exitosa.",
+      "host": "server1",
+      "archivo": "auth",
+      "proceso": "sshd",
+      "bloques": [
+        {
+          "plantilla": "Failed password for jperez from <<IP>> port <<PUERTO>> ssh2",
+          "ip": "192.168.10.31",
+          "repeticiones": 3,
+          "intervalo_s": 4.0,
+          "offset_s": 0.0
+        },
+        {
+          "plantilla": "Accepted password for jperez from <<IP>> port <<PUERTO>> ssh2",
+          "ip": "192.168.10.31",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 14.0
+        }
+      ]
+    },
+    {
+      "id": "BEN-02",
+      "nombre": "Sesion administrativa root autorizada desde la red de gestion",
+      "etiqueta": "benigno",
+      "regla_asociada": "Intento login root",
+      "resultado_esperado": "verdadero_negativo",
+      "justificacion": "Actividad sobre la cuenta root, que es lo que la regla vigila, pero por clave publica y con exito: no hay autenticacion fallida y la regla no dispara.",
+      "host": "server1",
+      "archivo": "auth",
+      "proceso": "sshd",
+      "bloques": [
+        {
+          "plantilla": "Accepted publickey for root from <<IP>> port <<PUERTO>> ssh2: RSA SHA256:5Hq2mTn4dVc8bJk1PwXeRt9LsAoZuYgF3Nv0MjEiQxs",
+          "ip": "192.168.10.5",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 0.0
+        },
+        {
+          "plantilla": "pam_unix(sshd:session): session opened for user root by (uid=0)",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 1.0
+        },
+        {
+          "plantilla": "pam_unix(sshd:session): session closed for user root",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 12.0
+        }
+      ]
+    },
+    {
+      "id": "BEN-03",
+      "nombre": "Mantenimiento programado con elevacion de privilegios autorizada",
+      "etiqueta": "benigno",
+      "regla_asociada": "Uso sospechoso de sudo",
+      "resultado_esperado": "verdadero_negativo",
+      "justificacion": "Un administrador ejecutando la ventana de mantenimiento produce los mismos registros de sudo que la regla evalua, pero seis elevaciones quedan por debajo del umbral de diez de la ventana de 600 s.",
+      "host": "server1",
+      "archivo": "auth",
+      "proceso": "sudo",
+      "bloques": [
+        {
+          "plantilla": "mlopez : TTY=pts/0 ; PWD=/home/mlopez ; USER=root ; COMMAND=/usr/bin/<<VALOR>>",
+          "valores": ["apt update", "apt upgrade -y", "systemctl restart nginx", "journalctl --vacuum-time=30d", "df -h", "systemctl status postgresql"],
+          "repeticiones": 6,
+          "intervalo_s": 3.0,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "BEN-04",
+      "nombre": "Sondeo de disponibilidad del sistema de monitoreo",
+      "etiqueta": "benigno",
+      "regla_asociada": "Escaneo puertos",
+      "resultado_esperado": "verdadero_negativo",
+      "justificacion": "El colector de metricas consulta puertos que el firewall no tiene abiertos y genera descartes autenticos, del mismo tipo que la regla evalua, pero cuatro paquetes quedan por debajo del umbral de cinco.",
+      "host": "firewall",
+      "archivo": "syslog",
+      "proceso": "kernel",
+      "bloques": [
+        {
+          "plantilla": "iptables DROP: IN=eth0 OUT= MAC=00:00:00:00:00:00 SRC=<<IP>> DST=192.168.1.1 PROTO=TCP DPT=<<VALOR>> SYN",
+          "ip": "192.168.10.9",
+          "valores": ["9100", "9256", "9187", "9114"],
+          "repeticiones": 4,
+          "intervalo_s": 5.0,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "BEN-05",
+      "nombre": "Uso legitimo del portal administrativo por un operador",
+      "etiqueta": "benigno",
+      "regla_asociada": "Escaneo directorios web",
+      "resultado_esperado": "falso_positivo",
+      "justificacion": "FALSO POSITIVO DOCUMENTADO. Un operador autorizado navegando el panel de administracion emite nueve peticiones GET a rutas bajo /admin, todas respondidas con 200. La regla de escaneo de directorios web sigue solo el patron de la ruta y no el codigo de respuesta ni la autenticacion de la sesion, de modo que las marca igual que a una enumeracion automatizada. Es el limite de una deteccion basada en expresiones regulares sobre la linea de log.",
+      "host": "webserver",
+      "archivo": "syslog",
+      "proceso": "nginx",
+      "bloques": [
+        {
+          "plantilla": "<<IP>> - operador1 GET /admin/<<VALOR>> 200 8120 \"https://portal.local/admin\" \"Mozilla/5.0 (X11; Linux x86_64)\"",
+          "ip": "192.168.10.44",
+          "valores": ["usuarios", "usuarios/142/editar", "reportes", "reportes/mensual", "auditoria", "parametros"],
+          "repeticiones": 9,
+          "intervalo_s": 4.0,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "BEN-06",
+      "nombre": "Consulta al SID por ventanilla dentro del uso previsto",
+      "etiqueta": "benigno",
+      "regla_asociada": "Consulta masiva SID",
+      "resultado_esperado": "verdadero_negativo",
+      "justificacion": "Un agente de mesa de entradas consulta seis documentos a lo largo de la atencion. Son los mismos eventos que la regla del caso RENAPER evalua, pero el volumen queda por debajo del umbral de diez, que es justamente lo que separa la consulta operativa de la extraccion masiva.",
+      "host": "sid-server",
+      "archivo": "syslog",
+      "proceso": "sid",
+      "bloques": [
+        {
+          "plantilla": "Query SID: DNI=27<<N6>>, Sexo=F, User=usr_ventanilla_07 from <<IP>>",
+          "ip": "10.20.30.55",
+          "repeticiones": 6,
+          "intervalo_s": 6.0,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "BEN-07",
+      "nombre": "Despliegue autorizado de la aplicacion Java",
+      "etiqueta": "benigno",
+      "regla_asociada": "Explotación web Apache Struts",
+      "resultado_esperado": "verdadero_negativo",
+      "justificacion": "El despliegue reinicia el filtro de Struts y deja trazas de ejecucion de procesos en el log de la aplicacion, que es el tipo de evento que la regla examina, pero ninguna linea contiene la invocacion de runtime.exec dentro de un encabezado de peticion.",
+      "host": "web01",
+      "archivo": "syslog",
+      "proceso": "tomcat",
+      "bloques": [
+        {
+          "plantilla": "Deploy pipeline: java.lang.ProcessBuilder start -> /opt/app/bin/migrar.sh (usuario ci-deploy)",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 0.0
+        },
+        {
+          "plantilla": "Struts2 dispatcher filter initialized, version 2.5.33",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 3.0
+        },
+        {
+          "plantilla": "<<IP>> - - \"GET /struts2-showcase/index.action HTTP/1.1\" 200 X-Handler: default",
+          "ip": "192.168.10.60",
+          "repeticiones": 4,
+          "intervalo_s": 2.0,
+          "offset_s": 6.0
+        }
+      ]
+    },
+    {
+      "id": "BEN-08",
+      "nombre": "Operacion normal del sistema sin correspondencia con ninguna regla (control)",
+      "etiqueta": "benigno",
+      "regla_asociada": null,
+      "resultado_esperado": "verdadero_negativo",
+      "justificacion": "Escenario de control. No se corresponde con ninguna de las siete reglas evaluadas: verifica que el sistema no genera alertas sobre la actividad de fondo del entorno, que es la mayor parte del volumen de logs en operacion real.",
+      "host": "server1",
+      "archivo": "syslog",
+      "proceso": "systemd",
+      "bloques": [
+        {
+          "plantilla": "Started Daily rotation of log files.",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 0.0
+        },
+        {
+          "plantilla": "Reloaded PostgreSQL cluster 16-main configuration.",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 2.0
+        },
+        {
+          "plantilla": "Backup job <<N>> finished: 4.2 GB transferred to /srv/backup in 00:03:11",
+          "repeticiones": 3,
+          "intervalo_s": 5.0,
+          "offset_s": 5.0
+        },
+        {
+          "plantilla": "NTP client synchronised to 192.168.10.1, offset 0.0031 s",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 22.0
+        }
+      ]
+    }
+  ]
+}

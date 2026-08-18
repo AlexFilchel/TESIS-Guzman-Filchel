@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+from sqlalchemy.dialects.postgresql import INET
 from sqlalchemy.sql import func
 from app.database import Base
 
@@ -11,7 +12,9 @@ class Alerta(Base):
     reconocida_en = Column(DateTime)
     severidad = Column(String(20), nullable=False)
     categoria = Column(String(50), nullable=False)
-    ip_origen = Column(String(50))
+    # El Anexo A documenta ip_origen como INET; el nodo `Store alerts` del
+    # workflow castea a $4::inet. SQLAlchemy devuelve el valor como str.
+    ip_origen = Column(INET)
     host_objetivo = Column(String(255))
     cantidad_eventos = Column(Integer, default=1)
     descripcion = Column(Text)
