@@ -1,0 +1,59 @@
+{
+  "descripcion": "Valores de referencia publicados en el Capitulo 6 del informe, para que calcular_metricas.py --verificar pueda contrastar lo recalculado contra lo publicado en un solo comando. Todos los tiempos en segundos.",
+  "advertencia": "Este archivo es una transcripcion del informe, no una medicion. No se toca para que los numeros cierren: si lo recalculado difiere, se informa la diferencia y se corrige el informe o se explica la divergencia.",
+  "estimador_desvio": "poblacional (statistics.pstdev)",
+  "orden_descriptores": ["media", "mediana", "min", "max", "desvio"],
+  "tiempos": {
+    "global": {
+      "seccion": "6.3",
+      "etiqueta": "Global (30 alertas)",
+      "mttd": { "media": 17.67, "mediana": 12.00, "min": 7.00, "max": 36.00, "desvio": 10.43 },
+      "mtta": { "media": 2.20, "mediana": 2.16, "min": 1.72, "max": 2.69, "desvio": 0.28 },
+      "mttr": { "media": 4.62, "mediana": 4.58, "min": 3.91, "max": 5.33, "desvio": 0.42 }
+    },
+    "Consulta masiva (RENAPER)": {
+      "seccion": "6.4.1",
+      "etiqueta": "RENAPER - consulta masiva (umbral 10)",
+      "claves": ["Consulta masiva (RENAPER)", "Consulta masiva SID"],
+      "mttd": { "media": 31.80, "mediana": 31.50, "min": 28.00, "max": 36.00, "desvio": 2.66 },
+      "mtta": { "media": 2.52, "mediana": 2.52, "min": 2.34, "max": 2.69, "desvio": 0.11 },
+      "mttr": { "media": 5.11, "mediana": 5.10, "min": 4.88, "max": 5.33, "desvio": 0.14 }
+    },
+    "Explotacion web (Equifax)": {
+      "seccion": "6.4.2",
+      "etiqueta": "Equifax - explotacion web (umbral 1)",
+      "claves": ["Explotacion web (Equifax)", "Explotación web Apache Struts"],
+      "mttd": { "media": 9.10, "mediana": 9.00, "min": 7.00, "max": 12.00, "desvio": 1.66 },
+      "mtta": { "media": 2.16, "mediana": 2.16, "min": 1.96, "max": 2.36, "desvio": 0.13 },
+      "mttr": { "media": 4.56, "mediana": 4.58, "min": 4.26, "max": 4.88, "desvio": 0.21 }
+    },
+    "Fuerza bruta SSH": {
+      "seccion": "6.4.4",
+      "etiqueta": "Fuerza bruta SSH (umbral 6)",
+      "claves": ["Fuerza bruta SSH"],
+      "nota": "El informe publica solo media y mediana. Minimo, maximo y desvio quedan en null a proposito: son los tres descriptores que falta reportar en el apartado 6.4.4, y el modo --verificar los marca como 'sin publicar' en lugar de inventarlos.",
+      "mttd": { "media": 12.10, "mediana": 12.00, "min": null, "max": null, "desvio": null },
+      "mtta": { "media": 1.92, "mediana": 1.92, "min": null, "max": null, "desvio": null },
+      "mttr": { "media": 4.19, "mediana": 4.20, "min": null, "max": null, "desvio": null }
+    }
+  },
+  "corpus": {
+    "seccion": "6.5.1",
+    "etiqueta": "Corpus etiquetado (16 escenarios)",
+    "matriz": {
+      "verdadero_positivo": 7,
+      "falso_positivo": 1,
+      "falso_negativo": 1,
+      "verdadero_negativo": 7
+    },
+    "nota_f1": "El informe publica precision, recall y exactitud, y las dos tasas de error. La medida F1 no figura entre los valores publicados, asi que queda en null: el script la calcula igual, pero no hay contra que contrastarla.",
+    "indicadores": {
+      "precision": 87.50,
+      "recall": 87.50,
+      "exactitud": 87.50,
+      "f1": null,
+      "tasa_falsos_positivos": 12.50,
+      "tasa_falsos_negativos": 12.50
+    }
+  }
+}

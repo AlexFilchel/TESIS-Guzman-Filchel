@@ -153,7 +153,7 @@
         "toEmail": "",
         "subject": "=[SIEM] {{$json.severidad}} - {{$json.categoria}}",
         "emailFormat": "html",
-        "html": "=<h2>Alerta de seguridad - {{$json.categoria}}</h2><p><b>Severidad:</b> {{$json.severidad}}</p><p><b>Origen:</b> {{$json.ip_origen || 'sin origen'}}</p><p><b>Host objetivo:</b> {{$json.host_objetivo}}</p><p><b>Eventos correlacionados:</b> {{$json.cantidad_eventos}}</p><p><b>Detectada:</b> {{$json.fecha}}</p><p>{{$json.descripcion}}</p><pre>{{$json.log_crudo}}</pre>",
+        "html": "=<h2>🚨 Alerta de Seguridad</h2><p><b>Severidad:</b> {{$json.severidad}}</p><p><b>Categoría:</b> {{$json.categoria}}</p><p><b>IP Origen:</b> {{$json.ip_origen || 'N/A'}}</p><p><b>Host:</b> {{$json.host_objetivo}}</p><p><b>Eventos:</b> {{$json.cantidad_eventos}}</p><p><b>Descripción:</b></p><p>{{$json.descripcion}}</p><p><b>Fecha:</b> {{$json.fecha}}</p>",
         "options": {}
       },
       "credentials": {
@@ -161,7 +161,7 @@
           "name": "SMTP SIEM (configurar al importar)"
         }
       },
-      "notes": "Remitente y destinatario quedan vacios a proposito: se completan al importar. Las credenciales SMTP no se versionan."
+      "notes": "Plantilla HTML del Anexo C.9. Remitente y destinatario quedan vacios a proposito: se completan al importar. Las credenciales SMTP no se versionan."
     }
   ],
   "connections": {
