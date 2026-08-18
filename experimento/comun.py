@@ -34,6 +34,32 @@ from pathlib import Path
 #: evaluador.py), lo único que cambia es la frecuencia del barrido.
 INTERVALO_EVALUACION_S = float(os.environ.get("INTERVALO_EVALUACION_S", "5"))
 
+#: Piso temporal de la instrumentación, en segundos: tiempo que transcurre entre
+#: la emisión de un evento y su disponibilidad efectiva para la evaluación de
+#: reglas.
+#:
+#: En el entorno original el evento no quedaba disponible en el instante en que
+#: se emitía. Recorría el trayecto completo del pipeline --el emisor lo mandaba
+#: por syslog a syslog-ng, syslog-ng lo volcaba a su archivo por host, y sólo
+#: entonces el barrido de reglas podía leerlo--, y ese trayecto introducía una
+#: demora que el informe llama «piso temporal de la instrumentación».
+#:
+#: `emisor.py` escribe directamente en el volumen de logs, así que en el
+#: repositorio ese trayecto no existe y el evento quedaría disponible de
+#: inmediato. Sin modelar la demora, el MTTD medido queda por debajo del
+#: publicado en una cantidad constante para las tres categorías. Esta constante
+#: la representa de forma explícita: el ciclo de evaluación no considera un
+#: evento hasta que pasaron LATENCIA_PROPAGACION_S segundos desde su emisión.
+#:
+#: **El valor es un parámetro del modelo, no una medición.** La latencia del
+#: entorno original no fue instrumentada, así que no hay un número medido que
+#: reproducir. 6,6 s es la diferencia constante entre el MTTD que produce este
+#: emisor y el que el informe publica para las tres categorías; es coherente,
+#: además, con el mínimo de 7,00 s del apartado 6.4.2, que es el piso más el
+#: primer tramo de espera del ciclo. Queda como constante para que el supuesto
+#: sea visible y auditable, y no un ajuste escondido en el código.
+LATENCIA_PROPAGACION_S = float(os.environ.get("LATENCIA_PROPAGACION_S", "6.6"))
+
 #: Ejecuciones por categoría medida. Tres categorías x diez ejecuciones = 30 alertas.
 EJECUCIONES_POR_CATEGORIA = int(os.environ.get("EJECUCIONES_POR_CATEGORIA", "10"))
 

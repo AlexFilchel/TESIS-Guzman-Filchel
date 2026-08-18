@@ -22,11 +22,19 @@ Fuente de los datos, por orden de preferencia:
     python experimento/calcular_metricas.py                  # lee mediciones.csv
     python experimento/calcular_metricas.py --desde-db       # consulta PostgreSQL
     python experimento/calcular_metricas.py --desde-db --desde 2026-08-18T10:00:00
+
+Con `--verificar` cada valor recalculado se imprime al lado del publicado en el
+Capítulo 6 y de la diferencia entre ambos. Los valores de referencia salen de
+`experimento/valores_publicados.json`, que indica de qué apartado del informe
+proviene cada uno.
+
+    python experimento/calcular_metricas.py --verificar
 """
 
 import argparse
 import csv
 import io
+import json
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -34,8 +42,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from comun import (  # noqa: E402
-    DIR_RESULTADOS, ESTIMADOR_DESVIO, INTERVALO_EVALUACION_S,
-    REGLAS_DEL_CORPUS, cargar_reglas, conectar_db, resumen,
+    DIR_EXPERIMENTO, DIR_RESULTADOS, ESTIMADOR_DESVIO, INTERVALO_EVALUACION_S,
+    LATENCIA_PROPAGACION_S, REGLAS_DEL_CORPUS, cargar_reglas, conectar_db,
+    resumen,
 )
 from escenarios import cargar_corpus  # noqa: E402
 from evaluar_corpus import evaluar_escenario, indicadores, matriz  # noqa: E402
@@ -132,11 +141,15 @@ def metricas_temporales(filas):
         tabla("%s (n=%d)" % (categoria.upper(), len(propias)), propias)
 
 
-def calidad_de_deteccion():
+def calidad_de_deteccion(imprimir=True):
+    """Evalúa el corpus. Devuelve (conteo, indicadores, filas, origen)."""
     reglas, origen = cargar_reglas(preferir_db=True, solo=REGLAS_DEL_CORPUS)
     filas = [evaluar_escenario(e, reglas) for e in cargar_corpus()]
     conteo = matriz(filas)
     ind = indicadores(conteo)
+
+    if not imprimir:
+        return conteo, ind, filas, origen
 
     print()
     print("=" * 78)
@@ -172,6 +185,134 @@ def calidad_de_deteccion():
         print("[aviso] Escenarios que no coinciden con lo declarado en los "
               "fixtures: %s" % ", ".join(divergentes))
 
+    return conteo, ind, filas, origen
+
+
+# =============================================================================
+# Modo --verificar: recalculado contra publicado
+# =============================================================================
+
+ARCHIVO_PUBLICADOS = DIR_EXPERIMENTO / "valores_publicados.json"
+#: Diferencia a partir de la cual una divergencia se marca. Por debajo de una
+#: centésima de segundo la diferencia es redondeo, no discrepancia.
+TOLERANCIA_S = 0.01
+DESCRIPTORES = ("media", "mediana", "min", "max", "desvio")
+
+
+def cargar_publicados():
+    return json.loads(io.open(ARCHIVO_PUBLICADOS, encoding="utf-8").read())
+
+
+def _fila_comparada(etiqueta, obtenido, publicado):
+    """Una línea de la tabla comparativa: obtenido, publicado y diferencia."""
+    celdas = []
+    marcado = False
+    for descriptor in DESCRIPTORES:
+        actual = None if obtenido is None else obtenido.get(descriptor)
+        ref = None if publicado is None else publicado.get(descriptor)
+
+        if actual is None:
+            celdas.append("%18s" % "sin datos")
+        elif ref is None:
+            # El informe no publica este descriptor: es de los que hay que
+            # reportar, no una divergencia.
+            celdas.append("%8.2f %9s" % (actual, "s/publ."))
+        else:
+            diferencia = actual - ref
+            if abs(diferencia) > TOLERANCIA_S:
+                marcado = True
+            celdas.append("%8.2f %+9.2f" % (actual, diferencia))
+    return "  %-8s %s" % (etiqueta, " ".join(celdas)), marcado
+
+
+def _cabecera_comparada(titulo, seccion):
+    print()
+    print("%s   [informe %s]" % (titulo, seccion))
+    print("-" * 78)
+    print("  %-8s %18s %18s %18s" % ("", "MEDIA  (dif)", "MEDIANA  (dif)", "MINIMO  (dif)"),
+          end="")
+    print(" %18s %18s" % ("MAXIMO  (dif)", "DESVIO  (dif)"))
+
+
+def verificar_tiempos(filas, publicados):
+    """Compara lo recalculado contra lo publicado, global y por categoría."""
+    divergencias = []
+
+    ambitos = [("global", filas)]
+    categorias = {}
+    for fila in filas:
+        clave = fila.get("categoria_medida") or fila.get("regla") or "sin categoria"
+        categorias.setdefault(clave, []).append(fila)
+
+    for nombre, referencia in publicados["tiempos"].items():
+        if nombre == "global":
+            continue
+        claves = referencia.get("claves") or [nombre]
+        propias = []
+        for clave in claves:
+            propias.extend(categorias.get(clave, []))
+        ambitos.append((nombre, propias))
+
+    for nombre, propias in ambitos:
+        referencia = publicados["tiempos"].get(nombre)
+        if referencia is None:
+            continue
+        _cabecera_comparada("%s (n=%d)" % (referencia["etiqueta"], len(propias)),
+                            referencia["seccion"])
+        for clave, etiqueta in METRICAS:
+            obtenido = resumen([_num(f.get(clave)) for f in propias])
+            linea, marcado = _fila_comparada(etiqueta, obtenido, referencia.get(clave.replace("_s", "")))
+            print(linea)
+            if marcado:
+                divergencias.append("%s / %s" % (referencia["etiqueta"], etiqueta))
+        if referencia.get("nota"):
+            print("  nota: %s" % referencia["nota"])
+
+    return divergencias
+
+
+def verificar_corpus(conteo, ind, publicados):
+    referencia = publicados["corpus"]
+    divergencias = []
+
+    print()
+    print("%s   [informe %s]" % (referencia["etiqueta"], referencia["seccion"]))
+    print("-" * 78)
+    print("  %-26s %10s %10s %10s" % ("", "OBTENIDO", "PUBLICADO", "DIF"))
+    for clave, etiqueta in (
+        ("verdadero_positivo", "Verdaderos positivos"),
+        ("falso_positivo", "Falsos positivos"),
+        ("falso_negativo", "Falsos negativos"),
+        ("verdadero_negativo", "Verdaderos negativos"),
+    ):
+        actual = conteo[clave]
+        ref = referencia["matriz"][clave]
+        print("  %-26s %10d %10d %+10d" % (etiqueta, actual, ref, actual - ref))
+        if actual != ref:
+            divergencias.append("corpus / %s" % etiqueta)
+
+    for clave, etiqueta in (
+        ("precision", "Precision"),
+        ("recall", "Recall (sensibilidad)"),
+        ("exactitud", "Exactitud"),
+        ("f1", "Medida F1"),
+        ("tasa_falsos_positivos", "Tasa de falsos positivos"),
+        ("tasa_falsos_negativos", "Tasa de falsos negativos"),
+    ):
+        actual = ind[clave]
+        ref = referencia["indicadores"].get(clave)
+        if actual is None:
+            print("  %-26s %10s %10s %10s" % (etiqueta, "n/d", "-", "-"))
+        elif ref is None:
+            print("  %-26s %9.2f%% %10s %10s" % (etiqueta, actual, "s/publ.", "-"))
+        else:
+            print("  %-26s %9.2f%% %9.2f%% %+9.2f%%"
+                  % (etiqueta, actual, ref, actual - ref))
+            if abs(actual - ref) > TOLERANCIA_S:
+                divergencias.append("corpus / %s" % etiqueta)
+
+    return divergencias
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -185,6 +326,9 @@ def main():
                         help="Categorias a incluir cuando se consulta la base.")
     parser.add_argument("--solo-corpus", action="store_true",
                         help="Omitir las metricas temporales.")
+    parser.add_argument("--verificar", action="store_true",
+                        help="Contrastar cada valor recalculado contra el "
+                             "publicado en el Capitulo 6 e imprimir la diferencia.")
     args = parser.parse_args()
 
     if not args.solo_corpus:
@@ -204,7 +348,51 @@ def main():
         if filas:
             metricas_temporales(filas)
 
-    calidad_de_deteccion()
+    if not args.verificar:
+        calidad_de_deteccion()
+        return 0
+
+    # --- modo verificacion -------------------------------------------------
+    publicados = cargar_publicados()
+    conteo, ind, corpus, origen = calidad_de_deteccion(imprimir=False)
+
+    print()
+    print("=" * 78)
+    print("VERIFICACION CONTRA LOS VALORES PUBLICADOS EN EL CAPITULO 6")
+    print("Referencia: %s" % ARCHIVO_PUBLICADOS.name)
+    print("Estimador de desviacion estandar: %s" % ESTIMADOR_DESVIO)
+    print("Ciclo de evaluacion: %.2f s | Piso de propagacion: %.2f s"
+          % (INTERVALO_EVALUACION_S, LATENCIA_PROPAGACION_S))
+    print("Cada celda: valor recalculado y (diferencia contra lo publicado).")
+    print("'s/publ.' = el informe no publica ese descriptor todavia.")
+    print("=" * 78)
+
+    divergencias = []
+    if filas:
+        divergencias += verificar_tiempos(filas, publicados)
+    else:
+        print()
+        print("[aviso] Sin mediciones temporales: falta %s." % args.csv)
+        print("[aviso] Corre primero: python experimento/run_experimento.py")
+    divergencias += verificar_corpus(conteo, ind, publicados)
+
+    sin_publicar = [f["id"] for f in corpus if f["coincide_con_lo_esperado"] != "si"]
+    if sin_publicar:
+        print()
+        print("[aviso] Escenarios que no coinciden con su fixture: %s"
+              % ", ".join(sin_publicar))
+
+    print()
+    print("=" * 78)
+    if divergencias:
+        print("DIVERGENCIAS A INFORMAR (%d):" % len(divergencias))
+        for d in divergencias:
+            print("  - %s" % d)
+        print()
+        print("No se ajusta nada para que cierren: se reporta la diferencia.")
+        return 1
+    print("Sin divergencias por encima de %.2f s respecto de lo publicado."
+          % TOLERANCIA_S)
     return 0
 
 

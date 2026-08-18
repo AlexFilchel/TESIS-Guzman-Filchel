@@ -17,7 +17,10 @@ El ciclo que este script recorre, para cada ejecución, es:
    relee los archivos de log, parsea las líneas con la misma función que el nodo
    `Parse Logs` y aplica la misma semántica que el nodo `Apply rules`: filtra por
    la ventana temporal de la regla, agrupa por entidad de origen y dispara cuando
-   el recuento de una entidad alcanza el umbral.
+   el recuento de una entidad alcanza el umbral. Un evento no entra en la
+   evaluación hasta que pasaron `LATENCIA_PROPAGACION_S` segundos desde su
+   emisión: es el piso temporal de la instrumentación, y está documentado en
+   comun.py.
 3. **Creación de la alerta.** Al dispararse se inserta la alerta con una
    sentencia parametrizada, igual que el nodo `Store alerts`, con
    `evento_generado_en` = marca del **primer evento de la secuencia que la
@@ -50,8 +53,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import emisor  # noqa: E402
 from comun import (  # noqa: E402
     DIR_FIXTURES, DIR_RESULTADOS, EJECUCIONES_POR_CATEGORIA,
-    INTERVALO_EVALUACION_S, TIMEOUT_DETECCION_S, EntornoNoDisponible,
-    api, cargar_reglas, conectar_db,
+    INTERVALO_EVALUACION_S, LATENCIA_PROPAGACION_S, TIMEOUT_DETECCION_S,
+    EntornoNoDisponible, api, cargar_reglas, conectar_db,
 )
 from escenarios import _sustituir  # noqa: E402
 from evaluador import evaluar, parsear_linea  # noqa: E402
@@ -99,6 +102,8 @@ class CicloEvaluacion:
         self.intervalo_s = intervalo_s
         self.archivos = {}
         self.proximo_tick = time.monotonic()
+        # Eventos leidos del log que todavia no cumplieron el piso de propagacion.
+        self.pendientes = []
 
     def seguir(self, ruta):
         """Empieza a seguir un archivo de log desde su final actual."""
@@ -136,7 +141,17 @@ class CicloEvaluacion:
         return True
 
     def barrer(self, buffer, momentos):
-        """Un barrido: incorpora lo nuevo y evalúa. Devuelve las detecciones."""
+        """Un barrido: incorpora lo disponible y evalúa. Devuelve las detecciones.
+
+        Un evento leído del archivo no pasa al buffer de evaluación hasta que
+        transcurrieron `LATENCIA_PROPAGACION_S` segundos desde su emisión. Es el
+        piso temporal de la instrumentación: en el entorno original el evento
+        tenía que recorrer el pipeline completo --emisor, syslog-ng, archivo por
+        host-- antes de quedar disponible para el barrido de reglas, y ese
+        trayecto no es instantáneo. `emisor.py` escribe directo al volumen, de
+        modo que sin este retardo el piso desaparecería. Ver la documentación de
+        la constante en comun.py.
+        """
         for linea in self._leer_nuevo():
             evento = parsear_linea(linea)
             if evento is None:
@@ -148,7 +163,20 @@ class CicloEvaluacion:
             clave = evento["raw"]
             if clave in momentos:
                 evento["event_time"] = momentos[clave]
-            buffer.append(evento)
+            self.pendientes.append(evento)
+
+        # Los que ya cumplieron el piso de propagación pasan a evaluación; el
+        # resto espera al próximo barrido.
+        ahora = datetime.now()
+        disponible = timedelta(seconds=LATENCIA_PROPAGACION_S)
+        todavia_no = []
+        for evento in self.pendientes:
+            if ahora - evento["event_time"] >= disponible:
+                buffer.append(evento)
+            else:
+                todavia_no.append(evento)
+        self.pendientes = todavia_no
+
         return evaluar(buffer, self.reglas)
 
 
@@ -219,6 +247,7 @@ def ejecutar_una(escenario, regla, ciclo, conexion, numero):
     ruta = emisor.ruta_log(escenario["host"], escenario.get("archivo", "auth"))
     emisor.limpiar(escenario["host"], escenario.get("archivo", "auth"))
     ciclo.seguir(ruta)
+    ciclo.pendientes = []
 
     plan = plan_de_emision(escenario)
     buffer, momentos = [], {}
@@ -305,7 +334,8 @@ def main():
     print("=" * 78)
     print("EXPERIMENTO TEMPORAL - %d escenarios x %d ejecuciones = %d alertas"
           % (len(escenarios), args.ejecuciones, len(escenarios) * args.ejecuciones))
-    print("Ciclo de evaluacion: %.2f s" % INTERVALO_EVALUACION_S)
+    print("Ciclo de evaluacion: %.2f s | Piso de propagacion: %.2f s"
+          % (INTERVALO_EVALUACION_S, LATENCIA_PROPAGACION_S))
     print("Retardo de reconocimiento: %.2f s | de resolucion: %.2f s"
           % (RETARDO_RECONOCIMIENTO_S, RETARDO_RESOLUCION_S))
     print("=" * 78)

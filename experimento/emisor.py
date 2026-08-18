@@ -44,11 +44,15 @@ def formatear(mensaje, host, proceso="sshd", pid=None, momento=None):
 def emitir(mensaje, host, proceso="sshd", archivo=ARCHIVO_AUTH, momento=None):
     """Escribe una línea de log y devuelve el instante en que se emitió.
 
-    El archivo se abre y se cierra en cada línea a propósito: garantiza que el
-    evento queda visible para el resto del sistema (Logstash, n8n, el ciclo de
-    evaluación) en el momento en que se lo da por emitido, sin quedar retenido
-    en un buffer de escritura. Ese instante es el que se compara contra la
-    creación de la alerta para obtener el MTTD.
+    El archivo se abre y se cierra en cada línea a propósito: garantiza que la
+    línea llega al disco en el momento en que se la da por emitida, sin quedar
+    retenida en un buffer de escritura. Ese instante es el que se compara contra
+    la creación de la alerta para obtener el MTTD.
+
+    Escribir directo al volumen saltea el trayecto que el evento recorría en el
+    entorno original (emisor -> syslog-ng -> archivo por host), y con él la
+    demora que ese trayecto introducía. El ciclo de evaluación la reintroduce de
+    forma explícita mediante `LATENCIA_PROPAGACION_S`; ver comun.py.
     """
     momento = momento or datetime.now()
     linea = formatear(mensaje, host, proceso=proceso, momento=momento)

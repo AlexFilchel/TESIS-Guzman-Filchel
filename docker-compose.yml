@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: siem123
       POSTGRES_DB: monitoreo_seguridad
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./sql:/docker-entrypoint-initdb.d
@@ -22,7 +22,7 @@ services:
       xpack.security.enabled: "false"
       ES_JAVA_OPTS: "-Xms1g -Xmx1g"
     ports:
-      - "9200:9200"
+      - "127.0.0.1:9200:9200"
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
     networks:
@@ -34,7 +34,7 @@ services:
     depends_on:
       - elasticsearch
     ports:
-      - "5044:5044"
+      - "127.0.0.1:5044:5044"
     volumes:
       - ./logstash/syslog-remotos.conf:/usr/share/logstash/pipeline/logstash.conf:ro
       - ./data/remotos:/var/log/remotos
@@ -90,7 +90,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "5678:5678"
+      - "127.0.0.1:5678:5678"
     environment:
       DB_TYPE: postgresdb
       DB_POSTGRESDB_HOST: postgres
@@ -115,7 +115,7 @@ services:
     build: ./backend
     container_name: siem_backend
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - DATABASE_URL=postgresql://siem:siem123@postgres:5432/monitoreo_seguridad
       - SECRET_KEY=siem-secret-key-change-in-production
