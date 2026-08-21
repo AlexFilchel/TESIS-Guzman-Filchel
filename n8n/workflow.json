@@ -56,7 +56,8 @@
         "fileSelector": "/var/log/remotos/**/*.log",
         "options": {}
       },
-      "notes": "Lee los archivos del volumen compartido con syslog-ng y Logstash. El acceso esta acotado por N8N_RESTRICT_FILE_ACCESS_TO."
+      "executeOnce": true,
+      "notes": "Lee los archivos del volumen compartido con syslog-ng y Logstash. El acceso esta acotado por N8N_RESTRICT_FILE_ACCESS_TO. `executeOnce` evita que corra una vez por cada regla que llega de GetRules."
     },
     {
       "id": "extract-from-file",
@@ -84,9 +85,9 @@
         0
       ],
       "parameters": {
-        "jsCode": "const items = $input.all();\nconst events = [];\nconst MESES = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,\n                Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };\n\n// Extrae la marca temporal del propio registro.\n// Devuelve null si la línea no contiene un formato reconocible.\nfunction extraerMarcaTemporal(linea) {\n  // Formato ISO 8601: 2026-08-11T13:24:05.123Z\n  const iso = linea.match(/\\b\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?/);\n  if (iso) {\n    const d = new Date(iso[0]);\n    if (!isNaN(d.getTime())) return d;\n  }\n  // Formato syslog RFC 3164: \"Aug 11 13:24:05\" (sin año ni huso horario)\n  const rfc = linea.match(/^([A-Z][a-z]{2})\\s+(\\d{1,2})\\s+(\\d{2}):(\\d{2}):(\\d{2})/);\n  if (rfc && MESES[rfc[1]] !== undefined) {\n    const ahora = new Date();\n    const d = new Date(\n      ahora.getFullYear(), MESES[rfc[1]], Number(rfc[2]),\n      Number(rfc[3]), Number(rfc[4]), Number(rfc[5])\n    );\n    // Si la fecha resultante queda en el futuro, corresponde al año anterior.\n    if (d.getTime() > ahora.getTime() + 86400000) {\n      d.setFullYear(ahora.getFullYear() - 1);\n    }\n    if (!isNaN(d.getTime())) return d;\n  }\n  return null;\n}\n\nfor (const item of items) {\n  const text = item.json.data;\n  if (!text) continue;\n\n  const lines = text.split('\\n');\n\n  for (const line of lines) {\n    if (!line.trim()) continue;\n\n    const ipMatch = line.match(/\\b(\\d{1,3}(?:\\.\\d{1,3}){3})\\b/);\n    const ingestedAt = new Date();\n    const marcaLog = extraerMarcaTemporal(line);\n\n    events.push({\n      raw: line,\n      source_ip: ipMatch ? ipMatch[1] : null,\n      category: line.includes('Failed password') ? 'authentication_failure' : 'general',\n      event_time: (marcaLog || ingestedAt).toISOString(),\n      event_time_source: marcaLog ? 'log' : 'ingesta',\n      ingested_at: ingestedAt.toISOString()\n    });\n  }\n}\n\nreturn events.map(e => ({ json: e }));"
+        "jsCode": "const items = $input.all();\nconst events = [];\nconst MESES = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,\n                Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11 };\n\n// Extrae la marca temporal del propio registro.\n// Devuelve null si la línea no contiene un formato reconocible.\nfunction extraerMarcaTemporal(linea) {\n  // Formato ISO 8601: 2026-08-11T13:24:05.123Z\n  const iso = linea.match(/\\b\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})?/);\n  if (iso) {\n    const d = new Date(iso[0]);\n    if (!isNaN(d.getTime())) return d;\n  }\n  // Formato syslog RFC 3164: \"Aug 11 13:24:05\" (sin año ni huso horario).\n  // El runtime de n8n (JS Task Runner) no respeta la zona horaria del\n  // contenedor, asi que la hora local del emisor (Argentina, UTC-3) se\n  // aplica de forma explicita en vez de depender de new Date(y,m,d,h,i,s).\n  const rfc = linea.match(/^([A-Z][a-z]{2})\\s+(\\d{1,2})\\s+(\\d{2}):(\\d{2}):(\\d{2})/);\n  if (rfc && MESES[rfc[1]] !== undefined) {\n    const OFFSET_HORAS_LOCAL = 3; // hora local del laboratorio respecto de UTC\n    const ahora = new Date();\n    const d = new Date(Date.UTC(\n      ahora.getUTCFullYear(), MESES[rfc[1]], Number(rfc[2]),\n      Number(rfc[3]), Number(rfc[4]), Number(rfc[5])\n    ) + OFFSET_HORAS_LOCAL * 3600000);\n    // Si la fecha resultante queda en el futuro, corresponde al año anterior.\n    if (d.getTime() > ahora.getTime() + 86400000) {\n      d.setUTCFullYear(d.getUTCFullYear() - 1);\n    }\n    if (!isNaN(d.getTime())) return d;\n  }\n  return null;\n}\n\nfor (const item of items) {\n  const text = item.json.data;\n  if (!text) continue;\n\n  const lines = text.split('\\n');\n\n  for (const line of lines) {\n    if (!line.trim()) continue;\n\n    const ipMatch = line.match(/\\b(\\d{1,3}(?:\\.\\d{1,3}){3})\\b/);\n    const ingestedAt = new Date();\n    const marcaLog = extraerMarcaTemporal(line);\n\n    events.push({\n      raw: line,\n      source_ip: ipMatch ? ipMatch[1] : null,\n      category: line.includes('Failed password') ? 'authentication_failure' : 'general',\n      event_time: (marcaLog || ingestedAt).toISOString(),\n      event_time_source: marcaLog ? 'log' : 'ingesta',\n      ingested_at: ingestedAt.toISOString()\n    });\n  }\n}\n\nreturn events.map(e => ({ json: e }));"
       },
-      "notes": "Normalizacion a eventos estructurados. La marca RFC 3164 se interpreta como hora local del emisor, que es lo que el protocolo transporta."
+      "notes": "Normalizacion a eventos estructurados. La marca RFC 3164 se interpreta como hora local del emisor (Argentina, UTC-3), aplicada de forma explicita porque el runtime de n8n no hereda la zona horaria del contenedor."
     },
     {
       "id": "apply-rules",
@@ -113,7 +114,7 @@
       ],
       "parameters": {
         "operation": "executeQuery",
-        "query": "INSERT INTO alertas (\n  fecha,\n  severidad,\n  categoria,\n  ip_origen,\n  host_objetivo,\n  cantidad_eventos,\n  descripcion,\n  log_crudo,\n  estado\n) VALUES ($1, $2, $3, $4::inet, $5, $6, $7, $8, $9);",
+        "query": "INSERT INTO alertas (\n  fecha,\n  severidad,\n  categoria,\n  ip_origen,\n  host_objetivo,\n  cantidad_eventos,\n  descripcion,\n  log_crudo,\n  estado\n) VALUES ($1, $2, $3, $4::inet, $5, $6, $7, $8, $9)\nRETURNING fecha, severidad, categoria, ip_origen::text AS ip_origen, host_objetivo, cantidad_eventos, descripcion;",
         "options": {
           "queryReplacement": "={{$json.fecha}}, {{$json.severidad}}, {{$json.categoria}}, {{$json.ip_origen}}, {{$json.host_objetivo}}, {{$json.cantidad_eventos}}, {{$json.descripcion}}, {{$json.log_crudo}}, nueva"
         }
@@ -123,7 +124,7 @@
           "name": "PostgreSQL SIEM (configurar al importar)"
         }
       },
-      "notes": "Sentencia parametrizada. log_crudo transporta contenido bajo control potencial de un atacante: interpolarlo en el texto SQL seria una inyeccion."
+      "notes": "Sentencia parametrizada. log_crudo transporta contenido bajo control potencial de un atacante: interpolarlo en el texto SQL seria una inyeccion. El RETURNING es necesario: sin el, los nodos siguientes ($json) no tienen los datos de la alerta y el mail llega vacio."
     },
     {
       "id": "es-alerta-nueva",
